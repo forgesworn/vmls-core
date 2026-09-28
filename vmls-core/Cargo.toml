@@ -1,0 +1,29 @@
+[package]
+name = "vmls-core"
+version = "0.1.0"
+edition = "2024"
+# 1.85 is the edition-2024 floor and is not raised by the D7 crates below:
+# k256 0.13.4 declares 1.65; sha2 0.10.9 and hkdf 0.12.4 are edition-2018
+# crates that declare none. The edition's MSRV-aware resolver keeps the lock
+# within 1.85. Only the pinned 1.94.1 toolchain has been run.
+rust-version = "1.85"
+license = "MIT"
+publish = false
+description = "Canonical VMLS/1 wire codecs: envelope, inner record, leaf binding, capability record and lane table"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+# Decision D7 (2026-09-28): one BIP-340 verifier and one HKDF for web and
+# Android. No default features: no RNG, no std-only paths, wasm32-clean.
+k256 = { version = "0.13.4", default-features = false, features = ["schnorr"] }
+sha2 = { version = "0.10.9", default-features = false }
+hkdf = { version = "0.12.4", default-features = false }
+
+[dev-dependencies]
+# Test-only AES-128-GCM for the record vectors. In production the AEAD is the
+# MLS suite provider's, supplied through `record::RecordAead`.
+aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

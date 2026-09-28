@@ -1,0 +1,726 @@
+{
+  "format": "vmls-lane-decision-v1",
+  "note": "Every composer input, in order. groupState is read only for a sheltered conversation, peerCapability only for a new one. wording names a row of the client's wording table.",
+  "cases": [
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-sheltered",
+        "indicator": "sheltered",
+        "wording": "sheltered",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "sheltered-unavailable",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-sheltered",
+        "indicator": "sheltered",
+        "wording": "sheltered",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "sheltered-unavailable",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "needs-recovery",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "needs-recovery",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "needs-recovery",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "needs-recovery",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "sheltered",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "public",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "send-nip17",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "create-sheltered-conversation",
+        "indicator": "sheltered",
+        "wording": "sheltered",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "sheltered-unavailable",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "offer-public",
+        "indicator": "not-sent",
+        "wording": "start-separate-public",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "offer-public",
+        "indicator": "not-sent",
+        "wording": "start-separate-public",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "active",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "create-sheltered-conversation",
+        "indicator": "sheltered",
+        "wording": "sheltered",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "hold",
+        "indicator": "not-sent",
+        "wording": "sheltered-unavailable",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": true,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "offer-public",
+        "indicator": "not-sent",
+        "wording": "start-separate-public",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": true,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "none"
+      },
+      "expect": {
+        "action": "offer-public",
+        "indicator": "not-sent",
+        "wording": "start-separate-public",
+        "offerPublic": true
+      }
+    },
+    {
+      "input": {
+        "conversation": "new",
+        "groupState": "needs-recovery",
+        "peerCapability": false,
+        "shelteredRoute": false,
+        "choice": "start-public"
+      },
+      "expect": {
+        "action": "start-public-conversation",
+        "indicator": "public",
+        "wording": "public",
+        "offerPublic": false
+      }
+    }
+  ]
+}

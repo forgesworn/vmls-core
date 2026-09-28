@@ -1,0 +1,17 @@
+{
+  "format": "vmls-envelope-known-answer-v1",
+  "profile": 1,
+  "note": "All keys and ciphertext are test data. A verifier must accept only the canonical RFC 8949 envelope shape and must not log record bytes on failure.",
+  "mailboxHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "cases": [
+    { "name": "canonical-short", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef", "expect": { "ok": true, "ciphertextHex": "deadbeef" } },
+    { "name": "canonical-u8-length", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f035818000102030405060708090a0b0c0d0e0f1011121314151617", "expect": { "ok": true, "ciphertextHex": "000102030405060708090a0b0c0d0e0f1011121314151617" } },
+    { "name": "wrong-mailbox", "activeMailboxHex": "ff0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef", "expect": { "ok": false, "error": "WrongMailbox" } },
+    { "name": "unsupported-version", "encodedHex": "a30102025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef", "expect": { "ok": false, "error": "UnsupportedVersion" } },
+    { "name": "noncanonical-version", "encodedHex": "a3011801025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "reordered-keys", "encodedHex": "a3025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01010344deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "noncanonical-ciphertext-length", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f035804deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "empty-ciphertext", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0340", "expect": { "ok": false, "error": "EmptyCiphertext" } },
+    { "name": "trailing-byte", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef00", "expect": { "ok": false, "error": "NonCanonical" } }
+  ]
+}
