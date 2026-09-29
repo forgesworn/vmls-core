@@ -1,0 +1,256 @@
+{
+  "format": "vmls-state-manifest-v1",
+  "note": "Test data only. Canonical state manifests: entries in any input order, keyed by canonical CBOR [namespace, primary key...] and sorted by key bytes; value hashes are SHA-256 of the typed canonical CBOR value. The last five cases differ only in one value or key type and must all have distinct digests.",
+  "cases": [
+    {
+      "name": "empty",
+      "subjectHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "installationHex": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+      "schemaManifestHashHex": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+      "entries": [],
+      "manifestHex": "85015820515151515151515151515151515151515151515151515151515151515151515158201a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a58205c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c80",
+      "digestHex": "969ecf6a2af9ba492aa920ebd43eb5709f80f5ee6345b447c3bfaa27e630f300"
+    },
+    {
+      "name": "mixed-out-of-order",
+      "subjectHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "installationHex": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+      "schemaManifestHashHex": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+      "entries": [
+        {
+          "namespace": "vmls_slots",
+          "key": [
+            {
+              "t": "bytes",
+              "hex": "0101010101010101010101010101010101010101010101010101010101010101"
+            },
+            {
+              "t": "int",
+              "v": 0
+            }
+          ],
+          "value": {
+            "t": "array",
+            "items": [
+              {
+                "t": "bytes",
+                "hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              {
+                "t": "int",
+                "v": 1700000000
+              },
+              {
+                "t": "null"
+              }
+            ]
+          }
+        },
+        {
+          "namespace": "vmls_records",
+          "key": [
+            {
+              "t": "bytes",
+              "hex": "0202020202020202020202020202020202020202020202020202020202020202"
+            },
+            {
+              "t": "int",
+              "v": 3
+            }
+          ],
+          "value": {
+            "t": "array",
+            "items": [
+              {
+                "t": "int",
+                "v": -5
+              },
+              {
+                "t": "text",
+                "v": "guest"
+              },
+              {
+                "t": "bytes",
+                "hex": ""
+              }
+            ]
+          }
+        },
+        {
+          "namespace": "circle_grants",
+          "key": [
+            {
+              "t": "text",
+              "v": "g1"
+            }
+          ],
+          "value": {
+            "t": "array",
+            "items": [
+              {
+                "t": "text",
+                "v": "[\"vmls\",\"1073741824\"]"
+              },
+              {
+                "t": "int",
+                "v": 0
+              },
+              {
+                "t": "int",
+                "v": -9007199254740991
+              }
+            ]
+          }
+        },
+        {
+          "namespace": "vmls_records",
+          "key": [
+            {
+              "t": "bytes",
+              "hex": "0202020202020202020202020202020202020202020202020202020202020202"
+            },
+            {
+              "t": "int",
+              "v": 24
+            }
+          ],
+          "value": {
+            "t": "array",
+            "items": [
+              {
+                "t": "int",
+                "v": 4294967296
+              },
+              {
+                "t": "null"
+              }
+            ]
+          }
+        },
+        {
+          "namespace": "claims",
+          "key": [],
+          "value": {
+            "t": "bytes",
+            "hex": "c0ffee"
+          }
+        }
+      ],
+      "manifestHex": "85015820515151515151515151515151515151515151515151515151515151515151515158201a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a58205c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c8582488166636c61696d735820cbc47c1298ced043c1043c49524f8d8f128f75871f7af6b561c472a1a92592838252826d636972636c655f6772616e7473626731582051c51e828b659b406925b7682ceb216e615f1c033a7851f0dbdc3dc466e54d4082582f836a766d6c735f736c6f7473582001010101010101010101010101010101010101010101010101010101010101010058200db860246e8c58cf0bd47e4a2c701306e69f196d3a2be9563905efe7e76eeebd825831836c766d6c735f7265636f72647358200202020202020202020202020202020202020202020202020202020202020202035820614a2cc31b9e0bcca74b5aeca45beb61ede0cd00bdcd32b29cecb79ce3f1e276825832836c766d6c735f7265636f72647358200202020202020202020202020202020202020202020202020202020202020202181858205e024cf8b2f97ba3e1fddaf4420560e21adb1902f21eab1256da0b0bee8c5721",
+      "digestHex": "5f73c11dcb0909237beaa2929da0d317bc10a11fa293e04b93c9da6657a346a4"
+    },
+    {
+      "name": "bytes-value",
+      "subjectHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "installationHex": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+      "schemaManifestHashHex": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+      "entries": [
+        {
+          "namespace": "x",
+          "key": [
+            {
+              "t": "int",
+              "v": 1
+            }
+          ],
+          "value": {
+            "t": "bytes",
+            "hex": "61"
+          }
+        }
+      ],
+      "manifestHex": "85015820515151515151515151515151515151515151515151515151515151515151515158201a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a58205c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c81824482617801582081acaafba961bb831ec40eb965155e3486392c60cfb8c75150beaf2caffc244a",
+      "digestHex": "4fdf94af08211c5578c32f0a782d85ab46919c6c1b6f4a932fce69424b6a9069"
+    },
+    {
+      "name": "text-value",
+      "subjectHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "installationHex": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+      "schemaManifestHashHex": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+      "entries": [
+        {
+          "namespace": "x",
+          "key": [
+            {
+              "t": "int",
+              "v": 1
+            }
+          ],
+          "value": {
+            "t": "text",
+            "v": "a"
+          }
+        }
+      ],
+      "manifestHex": "85015820515151515151515151515151515151515151515151515151515151515151515158201a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a58205c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c818244826178015820961b6dd3ede3cb8ecbaacbd68de040cd78eb2ed5889130cceb4c49268ea4d506",
+      "digestHex": "f9698fcf8d1598de27f865316a551d03deadb60b0ed97699bca6e08e7d8e4f17"
+    },
+    {
+      "name": "zero-value",
+      "subjectHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "installationHex": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+      "schemaManifestHashHex": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+      "entries": [
+        {
+          "namespace": "x",
+          "key": [
+            {
+              "t": "int",
+              "v": 1
+            }
+          ],
+          "value": {
+            "t": "int",
+            "v": 0
+          }
+        }
+      ],
+      "manifestHex": "85015820515151515151515151515151515151515151515151515151515151515151515158201a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a58205c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c8182448261780158206e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "digestHex": "e47915bcc6652d89a93d9e3d9b7e393fdea77ff97e5e28ee0242c6a1d6d2555b"
+    },
+    {
+      "name": "null-value",
+      "subjectHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "installationHex": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+      "schemaManifestHashHex": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+      "entries": [
+        {
+          "namespace": "x",
+          "key": [
+            {
+              "t": "int",
+              "v": 1
+            }
+          ],
+          "value": {
+            "t": "null"
+          }
+        }
+      ],
+      "manifestHex": "85015820515151515151515151515151515151515151515151515151515151515151515158201a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a58205c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c818244826178015820b0b2988b6bbe724bacda5e9e524736de0bc7dae41c46b4213c50e1d35d4e5f13",
+      "digestHex": "7b9e0ce789863eaea04d788458b1d11f30a2b957bd56b8195d9057495ed4afbd"
+    },
+    {
+      "name": "text-key",
+      "subjectHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "installationHex": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+      "schemaManifestHashHex": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+      "entries": [
+        {
+          "namespace": "x",
+          "key": [
+            {
+              "t": "text",
+              "v": "1"
+            }
+          ],
+          "value": {
+            "t": "null"
+          }
+        }
+      ],
+      "manifestHex": "85015820515151515151515151515151515151515151515151515151515151515151515158201a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a58205c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c81824582617861315820b0b2988b6bbe724bacda5e9e524736de0bc7dae41c46b4213c50e1d35d4e5f13",
+      "digestHex": "a2acbb984584eecb9452179967bbd6a7369aeb5befea6719d8e6354cce07f813"
+    }
+  ]
+}

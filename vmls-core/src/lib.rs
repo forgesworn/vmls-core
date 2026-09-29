@@ -12,6 +12,10 @@
 //! - [`binding`]: `leaf-binding/1` and the kind-20460 person-credential rules;
 //! - [`capability`]: the one-time KeyPackage capability record;
 //! - [`lane`]: the composer's send-lane decision table;
+//! - [`receipt`]: signed slot receipts and restore-witness receipts;
+//! - [`evidence`]: the fork-evidence payload (record type 5);
+//! - [`witness`]: restore-witness read and advance requests;
+//! - [`manifest`]: the canonical state manifest and its digest;
 //! - [`ErrorCode`]: stable, byte-free failure codes.
 //!
 //! The VMLS/1 transport contract is not yet published; the vectors in
@@ -24,8 +28,12 @@ pub mod capability;
 mod cbor;
 pub mod derive;
 mod error;
+pub mod evidence;
 pub mod lane;
+pub mod manifest;
+pub mod receipt;
 pub mod record;
+pub mod witness;
 
 pub use cbor::MAX_SAFE_INTEGER;
 pub use error::ErrorCode;

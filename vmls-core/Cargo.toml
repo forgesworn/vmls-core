@@ -20,6 +20,10 @@ path = "src/lib.rs"
 k256 = { version = "0.13.4", default-features = false, features = ["schnorr"] }
 sha2 = { version = "0.10.9", default-features = false }
 hkdf = { version = "0.12.4", default-features = false }
+# Contract §5.1/§4.2 (2026-09-29): strict Ed25519 verification of slot and
+# witness receipts under the pinned Link node key. Same version as the
+# OpenMLS graph in vmls-mls; no default features (no std, no RNG).
+ed25519-dalek = { version = "=2.2.0", default-features = false }
 
 [dev-dependencies]
 # Test-only AES-128-GCM for the record vectors. In production the AEAD is the

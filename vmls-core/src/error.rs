@@ -61,11 +61,21 @@ pub enum ErrorCode {
     CapabilityOutlivesBinding,
     /// The caller's AEAD refused to seal or returned the wrong length.
     AeadUnavailable,
+    /// A slot receipt names a node other than the pinned home box.
+    ReceiptWrongNode,
+    /// A slot or witness receipt signature does not verify strictly under
+    /// the pinned Ed25519 key.
+    ReceiptSignatureInvalid,
+    /// A witness receipt does not echo the caller's fresh challenge.
+    WitnessChallengeMismatch,
+    /// Two evidence receipts that are not one node's contradictory
+    /// signatures for the same slot and attempt, in ascending hash order.
+    EvidenceNotEquivocation,
 }
 
 impl ErrorCode {
     /// Every code, in number order.
-    pub const ALL: [Self; 30] = [
+    pub const ALL: [Self; 34] = [
         Self::Malformed,
         Self::NonCanonical,
         Self::UnsupportedVersion,
@@ -96,6 +106,10 @@ impl ErrorCode {
         Self::CapabilityLifetimeTooLong,
         Self::CapabilityOutlivesBinding,
         Self::AeadUnavailable,
+        Self::ReceiptWrongNode,
+        Self::ReceiptSignatureInvalid,
+        Self::WitnessChallengeMismatch,
+        Self::EvidenceNotEquivocation,
     ];
 
     /// The stable string form, as used in the published vectors.
@@ -131,11 +145,16 @@ impl ErrorCode {
             Self::CapabilityLifetimeTooLong => "CapabilityLifetimeTooLong",
             Self::CapabilityOutlivesBinding => "CapabilityOutlivesBinding",
             Self::AeadUnavailable => "AeadUnavailable",
+            Self::ReceiptWrongNode => "ReceiptWrongNode",
+            Self::ReceiptSignatureInvalid => "ReceiptSignatureInvalid",
+            Self::WitnessChallengeMismatch => "WitnessChallengeMismatch",
+            Self::EvidenceNotEquivocation => "EvidenceNotEquivocation",
         }
     }
 
     /// The stable number. Ranges: 1-9 codec, 10-19 record, 20-39 binding and
-    /// credential, 40-49 capability, 50-59 caller-supplied primitives.
+    /// credential, 40-49 capability, 50-59 caller-supplied primitives, 60-69 receipts
+    /// and fork evidence.
     pub const fn number(self) -> u16 {
         match self {
             Self::Malformed => 1,
@@ -168,6 +187,10 @@ impl ErrorCode {
             Self::CapabilityLifetimeTooLong => 41,
             Self::CapabilityOutlivesBinding => 42,
             Self::AeadUnavailable => 50,
+            Self::ReceiptWrongNode => 60,
+            Self::ReceiptSignatureInvalid => 61,
+            Self::WitnessChallengeMismatch => 62,
+            Self::EvidenceNotEquivocation => 63,
         }
     }
 

@@ -10,6 +10,7 @@
 use crate::ErrorCode;
 
 const MAJOR_UINT: u8 = 0;
+const MAJOR_NEGATIVE: u8 = 1;
 const MAJOR_BYTES: u8 = 2;
 const MAJOR_TEXT: u8 = 3;
 const MAJOR_ARRAY: u8 = 4;
@@ -195,6 +196,20 @@ pub(crate) fn write_text(out: &mut Vec<u8>, text: &str) {
 
 pub(crate) fn write_array(out: &mut Vec<u8>, len: usize) {
     write_head(out, MAJOR_ARRAY, len as u64);
+}
+
+/// A signed integer: major type 0 for `value >= 0`, major type 1 (`-1 - n`)
+/// below zero.
+pub(crate) fn write_int(out: &mut Vec<u8>, value: i64) {
+    if value >= 0 {
+        write_head(out, MAJOR_UINT, value as u64);
+    } else {
+        write_head(out, MAJOR_NEGATIVE, !(value as u64));
+    }
+}
+
+pub(crate) fn write_null(out: &mut Vec<u8>) {
+    out.push(0xf6);
 }
 
 /// The encoded size of a byte-string head for `len` bytes.

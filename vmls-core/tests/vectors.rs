@@ -423,6 +423,7 @@ fn record_suite_matches() {
             "commit-slot" => MailboxKind::CommitSlot,
             "welcome" => MailboxKind::Welcome,
             "introduction" => MailboxKind::Introduction,
+            "fork-evidence" => MailboxKind::ForkEvidence,
             other => panic!("mailbox kind {other}"),
         };
         let result = record::open(&TestAead, &secret, &mailbox, &sealed, kind);

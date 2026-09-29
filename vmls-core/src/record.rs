@@ -54,6 +54,9 @@ pub enum RecordType {
     Capability,
     /// An MLS `PrivateMessage` carrying a Commit, deposited at a commit slot.
     Commit,
+    /// A [`crate::evidence::ForkEvidence`] payload, sent to a fork-evidence
+    /// mailbox derived from a departed epoch.
+    ForkEvidence,
 }
 
 /// Where a record was fetched from. Each kind of mailbox carries exactly one
@@ -68,6 +71,8 @@ pub enum MailboxKind {
     Welcome,
     /// A pairwise introduction mailbox.
     Introduction,
+    /// A leaf's fork-evidence mailbox for a departed epoch.
+    ForkEvidence,
 }
 
 impl MailboxKind {
@@ -78,6 +83,7 @@ impl MailboxKind {
             Self::CommitSlot => RecordType::Commit,
             Self::Welcome => RecordType::Welcome,
             Self::Introduction => RecordType::Capability,
+            Self::ForkEvidence => RecordType::ForkEvidence,
         }
     }
 }
@@ -89,6 +95,7 @@ impl RecordType {
             Self::Welcome => 2,
             Self::Capability => 3,
             Self::Commit => 4,
+            Self::ForkEvidence => 5,
         }
     }
 
@@ -98,6 +105,7 @@ impl RecordType {
             2 => Some(Self::Welcome),
             3 => Some(Self::Capability),
             4 => Some(Self::Commit),
+            5 => Some(Self::ForkEvidence),
             _ => None,
         }
     }
@@ -407,6 +415,7 @@ mod tests {
             MailboxKind::CommitSlot,
             MailboxKind::Welcome,
             MailboxKind::Introduction,
+            MailboxKind::ForkEvidence,
         ];
         for sent in kinds {
             let record = InnerRecord {
@@ -436,7 +445,7 @@ mod tests {
         roomy.resize(BUCKETS[1] - RECORD_OVERHEAD, 0);
         assert_eq!(decode_plaintext(&roomy), Err(ErrorCode::BadPadding));
         let mut unknown = good.clone();
-        unknown[2] = 5;
+        unknown[2] = 6;
         assert_eq!(
             decode_plaintext(&unknown),
             Err(ErrorCode::UnsupportedRecordType)

@@ -39,6 +39,10 @@ pub const INFO_COMMIT_SLOT: &[u8] = b"VMLS/1 commit-slot";
 pub const INFO_SLOT_RECORD: &[u8] = b"VMLS/1 slot record";
 /// HKDF info for a record's AEAD key and nonce (salt is the record id).
 pub const INFO_RECORD_AEAD: &[u8] = b"VMLS/1 record aead";
+/// `info` prefix for a leaf's fork-evidence mailbox in a departed epoch.
+pub const INFO_FORK_MAILBOX: &[u8] = b"VMLS/1 fork mailbox";
+/// `info` prefix for a leaf's fork-evidence record secret.
+pub const INFO_FORK_RECORD: &[u8] = b"VMLS/1 fork record";
 /// HKDF-Extract salt for the pairwise introduction secret.
 pub const INTRODUCTION_SALT: &[u8] = b"VMLS/1 introduction";
 /// HKDF info prefix for an introduction mailbox; followed by the recipient's
@@ -93,6 +97,22 @@ pub fn commit_slot(epoch_secret: &[u8; 32], attempt: u32) -> [u8; 32] {
 /// The outer-record secret for the one record deposited at `slot`.
 pub fn slot_record_secret(epoch_secret: &[u8; 32], slot: &[u8; 32]) -> [u8; 32] {
     expand(epoch_secret, &[INFO_SLOT_RECORD, slot])
+}
+
+/// Where `leaf_id` receives fork evidence about the transition out of this
+/// epoch. Derived before leaving the epoch; the post-transition secret is
+/// never used for evidence (contract §5.2).
+pub fn fork_mailbox(epoch_secret: &[u8; 32], leaf_id: &[u8; 32]) -> [u8; 32] {
+    expand(epoch_secret, &[INFO_FORK_MAILBOX, leaf_id])
+}
+
+/// The outer-record secret for fork evidence to `leaf_id` at `mailbox`.
+pub fn fork_record_secret(
+    epoch_secret: &[u8; 32],
+    leaf_id: &[u8; 32],
+    mailbox: &[u8; 32],
+) -> [u8; 32] {
+    expand(epoch_secret, &[INFO_FORK_RECORD, leaf_id, mailbox])
 }
 
 /// SHA-256 over the tag and the exact MLS message bytes of a Commit. The
