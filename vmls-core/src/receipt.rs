@@ -12,7 +12,7 @@ use crate::{ErrorCode, MAX_SAFE_INTEGER};
 /// The only receipt layout version.
 pub const RECEIPT_VERSION: u8 = 1;
 /// Bytes in a slot receipt.
-pub const SLOT_RECEIPT_BYTES: usize = 165;
+pub const SLOT_RECEIPT_BYTES: usize = 197;
 /// Bytes in a witness receipt.
 pub const WITNESS_RECEIPT_BYTES: usize = 170;
 /// Domain tag for the slot receipt digest.
@@ -25,10 +25,17 @@ pub fn envelope_hash(envelope: &[u8]) -> [u8; 32] {
     Sha256::digest(envelope).into()
 }
 
-/// The digest the home box signs for one slot attempt.
-pub fn slot_digest(slot: &[u8; 32], attempt: u32, envelope_hash: &[u8; 32]) -> [u8; 32] {
+/// The digest the home box signs for one slot attempt under its current
+/// installation.
+pub fn slot_digest(
+    installation: &[u8; 32],
+    slot: &[u8; 32],
+    attempt: u32,
+    envelope_hash: &[u8; 32],
+) -> [u8; 32] {
     Sha256::new()
         .chain_update(SLOT_RECEIPT_TAG)
+        .chain_update(installation)
         .chain_update(slot)
         .chain_update(attempt.to_be_bytes())
         .chain_update(envelope_hash)
@@ -48,10 +55,12 @@ fn array<const N: usize>(bytes: &[u8], at: usize) -> [u8; N] {
         .expect("caller checked the length")
 }
 
-/// A home box's signed statement that `envelope_hash` won `slot` at `attempt`.
+/// A home box's signed statement that `envelope_hash` won `slot` at `attempt`
+/// under the box's `installation` (its VMLS genesis).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SlotReceipt {
     pub node: [u8; 32],
+    pub installation: [u8; 32],
     pub slot: [u8; 32],
     pub attempt: u32,
     pub envelope_hash: [u8; 32],
@@ -69,10 +78,11 @@ impl SlotReceipt {
         }
         Ok(Self {
             node: array(bytes, 1),
-            slot: array(bytes, 33),
-            attempt: u32::from_be_bytes(array(bytes, 65)),
-            envelope_hash: array(bytes, 69),
-            signature: array(bytes, 101),
+            installation: array(bytes, 33),
+            slot: array(bytes, 65),
+            attempt: u32::from_be_bytes(array(bytes, 97)),
+            envelope_hash: array(bytes, 101),
+            signature: array(bytes, 133),
         })
     }
 
@@ -80,15 +90,21 @@ impl SlotReceipt {
         let mut out = [0; SLOT_RECEIPT_BYTES];
         out[0] = RECEIPT_VERSION;
         out[1..33].copy_from_slice(&self.node);
-        out[33..65].copy_from_slice(&self.slot);
-        out[65..69].copy_from_slice(&self.attempt.to_be_bytes());
-        out[69..101].copy_from_slice(&self.envelope_hash);
-        out[101..].copy_from_slice(&self.signature);
+        out[33..65].copy_from_slice(&self.installation);
+        out[65..97].copy_from_slice(&self.slot);
+        out[97..101].copy_from_slice(&self.attempt.to_be_bytes());
+        out[101..133].copy_from_slice(&self.envelope_hash);
+        out[133..].copy_from_slice(&self.signature);
         out
     }
 
     pub fn digest(&self) -> [u8; 32] {
-        slot_digest(&self.slot, self.attempt, &self.envelope_hash)
+        slot_digest(
+            &self.installation,
+            &self.slot,
+            self.attempt,
+            &self.envelope_hash,
+        )
     }
 
     /// Checks the receipt names `pinned_node` and is strictly signed by it.
@@ -106,9 +122,26 @@ impl SlotReceipt {
         Ok(receipt)
     }
 
-    /// True when both receipts describe the same node, slot and attempt.
+    /// True when both receipts name the same node, installation and slot.
+    pub fn same_slot(&self, other: &Self) -> bool {
+        self.node == other.node
+            && self.installation == other.installation
+            && self.slot == other.slot
+    }
+
+    /// True when both receipts name the same node, installation, slot and
+    /// attempt.
     pub fn same_position(&self, other: &Self) -> bool {
-        self.node == other.node && self.slot == other.slot && self.attempt == other.attempt
+        self.same_slot(other) && self.attempt == other.attempt
+    }
+
+    /// The 36-byte `attempt || envelope_hash` key that orders and
+    /// distinguishes two receipts for one slot (§5.2).
+    pub fn pair_key(&self) -> [u8; 36] {
+        let mut out = [0; 36];
+        out[..4].copy_from_slice(&self.attempt.to_be_bytes());
+        out[4..].copy_from_slice(&self.envelope_hash);
+        out
     }
 }
 

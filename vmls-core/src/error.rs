@@ -68,8 +68,9 @@ pub enum ErrorCode {
     ReceiptSignatureInvalid,
     /// A witness receipt does not echo the caller's fresh challenge.
     WitnessChallengeMismatch,
-    /// Two evidence receipts that are not one node's contradictory
-    /// signatures for the same slot and attempt, in ascending hash order.
+    /// Two evidence receipts that are not one node's and installation's
+    /// contradictory signatures for the same slot, in ascending
+    /// `attempt || envelope_hash` order.
     EvidenceNotEquivocation,
 }
 

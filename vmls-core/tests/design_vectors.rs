@@ -19,12 +19,18 @@ use vmls_core::witness::{AdvanceRequest, ReadRequest};
 #[serde(rename_all = "camelCase")]
 struct Design {
     node_hex: String,
+    installation_hex: String,
     envelope_hex: String,
     other_envelope_hex: String,
     slot_receipt_hex: String,
     other_slot_receipt_hex: String,
     slot_digest_hex: String,
     evidence_hex: String,
+    relabelled_slot_receipt_hex: String,
+    relabelled_evidence_hex: String,
+    attempt_order_evidence_hex: String,
+    foreign_installation_hex: String,
+    foreign_slot_receipt_hex: String,
     witness_hex: String,
     epoch_secret_hex: String,
     leaf_hex: String,
@@ -53,9 +59,38 @@ fn slot_receipts_verify_and_round_trip() {
         let parsed = SlotReceipt::verified(&raw, &node).unwrap();
         assert_eq!(parsed.encode().as_slice(), raw.as_slice());
         assert_eq!(parsed.envelope_hash, receipt::envelope_hash(&envelope));
+        assert_eq!(parsed.installation, hex32(&d.installation_hex));
     }
     let first = SlotReceipt::parse(&hex(&d.slot_receipt_hex)).unwrap();
     assert_eq!(first.digest(), hex32(&d.slot_digest_hex));
+    assert_eq!(
+        receipt::slot_digest(
+            &first.installation,
+            &first.slot,
+            first.attempt,
+            &first.envelope_hash
+        ),
+        hex32(&d.slot_digest_hex)
+    );
+
+    let relabelled = SlotReceipt::verified(&hex(&d.relabelled_slot_receipt_hex), &node).unwrap();
+    assert_eq!(relabelled.envelope_hash, first.envelope_hash);
+    assert_eq!(relabelled.attempt, first.attempt + 1);
+    let foreign = SlotReceipt::verified(&hex(&d.foreign_slot_receipt_hex), &node).unwrap();
+    assert_eq!(foreign.installation, hex32(&d.foreign_installation_hex));
+    assert!(!foreign.same_slot(&first));
+}
+
+#[test]
+fn the_installation_is_inside_the_signed_digest() {
+    let d = design();
+    let node = hex32(&d.node_hex);
+    let mut moved = SlotReceipt::parse(&hex(&d.slot_receipt_hex)).unwrap();
+    moved.installation = hex32(&d.foreign_installation_hex);
+    assert_eq!(
+        SlotReceipt::verified(&moved.encode(), &node),
+        Err(ErrorCode::ReceiptSignatureInvalid)
+    );
 }
 
 #[test]
@@ -86,7 +121,7 @@ fn slot_receipt_refusals_are_specific() {
         Err(ErrorCode::ReceiptWrongNode)
     );
     assert_eq!(
-        SlotReceipt::verified(&raw[..164], &node),
+        SlotReceipt::verified(&raw[..196], &node),
         Err(ErrorCode::Malformed)
     );
     let mut long = raw.clone();
@@ -102,13 +137,13 @@ fn slot_receipt_refusals_are_specific() {
         Err(ErrorCode::UnsupportedVersion)
     );
     let mut signature = raw.clone();
-    signature[164] ^= 1;
+    signature[196] ^= 1;
     assert_eq!(
         SlotReceipt::verified(&signature, &node),
         Err(ErrorCode::ReceiptSignatureInvalid)
     );
     let mut attempt = raw;
-    attempt[68] ^= 1;
+    attempt[100] ^= 1;
     assert_eq!(
         SlotReceipt::verified(&attempt, &node),
         Err(ErrorCode::ReceiptSignatureInvalid)
@@ -213,7 +248,7 @@ fn evidence_layout_rules_refuse() {
         Err(ErrorCode::UnsupportedVersion)
     );
 
-    let (first, second) = raw[10..].split_at(165);
+    let (first, second) = raw[10..].split_at(197);
     let mut descending = header(2);
     descending.extend_from_slice(second);
     descending.extend_from_slice(first);
@@ -228,15 +263,93 @@ fn evidence_layout_rules_refuse() {
         ForkEvidence::parse(&duplicate),
         Err(ErrorCode::EvidenceNotEquivocation)
     );
+    // Node, installation or slot differ: never one slot's pair.
     for offset in [1, 33, 65] {
         let mut moved = raw.clone();
-        moved[10 + 165 + offset] ^= 1;
+        moved[10 + 197 + offset] ^= 1;
         assert_eq!(
             ForkEvidence::parse(&moved),
             Err(ErrorCode::EvidenceNotEquivocation),
             "second receipt differs at field offset {offset}"
         );
     }
+    // A higher attempt on the second receipt keeps the order ascending, so
+    // the layout accepts it (P2-R-01); its signature then fails.
+    let mut later = raw.clone();
+    later[10 + 197 + 100] ^= 4;
+    let parsed = ForkEvidence::parse(&later).unwrap();
+    assert_eq!(
+        parsed.verify(&hex32(&d.node_hex)),
+        Err(ErrorCode::ReceiptSignatureInvalid)
+    );
+
+    // A pair whose receipts name different installations (T40). The foreign
+    // receipt has the relabelled receipt's key, which does pair with the
+    // slot receipt, so only the installation refuses it.
+    let slot_receipt = hex(&d.slot_receipt_hex);
+    let a = SlotReceipt::parse(&slot_receipt).unwrap();
+    let relabelled = SlotReceipt::parse(&hex(&d.relabelled_slot_receipt_hex)).unwrap();
+    let foreign = SlotReceipt::parse(&hex(&d.foreign_slot_receipt_hex)).unwrap();
+    assert_eq!(foreign.pair_key(), relabelled.pair_key());
+    assert!(ForkEvidence::equivocation(7, a.clone(), relabelled).is_ok());
+    let mut mixed = header(2);
+    mixed.extend_from_slice(&slot_receipt);
+    mixed.extend_from_slice(&hex(&d.foreign_slot_receipt_hex));
+    assert_eq!(
+        ForkEvidence::parse(&mixed),
+        Err(ErrorCode::EvidenceNotEquivocation)
+    );
+    assert_eq!(
+        ForkEvidence::equivocation(7, a, foreign),
+        Err(ErrorCode::EvidenceNotEquivocation)
+    );
+}
+
+#[test]
+fn per_slot_pairs_order_by_attempt_then_hash() {
+    let d = design();
+    let node = hex32(&d.node_hex);
+    for raw in [
+        hex(&d.relabelled_evidence_hex),
+        hex(&d.attempt_order_evidence_hex),
+    ] {
+        assert_eq!(raw.len(), evidence::TWO_RECEIPT_BYTES);
+        let parsed = ForkEvidence::parse(&raw).unwrap();
+        parsed.verify(&node).unwrap();
+        assert_eq!(parsed.encode(), raw);
+        let ForkEvidence::Equivocation { first, second, .. } = &parsed else {
+            panic!("expected a pair");
+        };
+        assert_eq!(first.attempt + 1, second.attempt);
+        assert_eq!(
+            ForkEvidence::equivocation(7, second.clone(), first.clone()).unwrap(),
+            parsed
+        );
+
+        let mut descending = raw[..10].to_vec();
+        descending.extend_from_slice(&raw[10 + 197..]);
+        descending.extend_from_slice(&raw[10..10 + 197]);
+        assert_eq!(
+            ForkEvidence::parse(&descending),
+            Err(ErrorCode::EvidenceNotEquivocation)
+        );
+    }
+
+    // One hash under two labels.
+    let ForkEvidence::Equivocation { first, second, .. } =
+        ForkEvidence::parse(&hex(&d.relabelled_evidence_hex)).unwrap()
+    else {
+        panic!("expected a pair");
+    };
+    assert_eq!(first.envelope_hash, second.envelope_hash);
+
+    // The attempt decides before the hash.
+    let ForkEvidence::Equivocation { first, second, .. } =
+        ForkEvidence::parse(&hex(&d.attempt_order_evidence_hex)).unwrap()
+    else {
+        panic!("expected a pair");
+    };
+    assert!(first.envelope_hash > second.envelope_hash);
 }
 
 #[test]

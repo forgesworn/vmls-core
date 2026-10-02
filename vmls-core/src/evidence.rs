@@ -1,12 +1,14 @@
 //! The fork-evidence payload carried by record type 5 (contract §5.2, §5.3).
 //!
 //! ```text
-//! 01 || pre_epoch:u64be || count:u8 || receipt[165] * count
+//! 01 || pre_epoch:u64be || count:u8 || receipt[197] * count
 //! ```
 //!
 //! One receipt reports an observation; two are a candidate equivocation
-//! proof. The epoch label is unsigned: it never associates an unrelated slot
-//! with a session, which is the engine's job.
+//! proof: one node and installation signing two different
+//! `(attempt, envelope hash)` facts for one slot. The epoch label is
+//! unsigned: it never associates an unrelated slot with a session, which is
+//! the engine's job.
 
 use crate::ErrorCode;
 use crate::receipt::{SLOT_RECEIPT_BYTES, SlotReceipt};
@@ -19,8 +21,9 @@ pub const ONE_RECEIPT_BYTES: usize = HEADER_BYTES + SLOT_RECEIPT_BYTES;
 /// Payload length with two receipts.
 pub const TWO_RECEIPT_BYTES: usize = HEADER_BYTES + 2 * SLOT_RECEIPT_BYTES;
 
-/// A decoded evidence payload. A pair is always the same node, slot and
-/// attempt with distinct envelope hashes in ascending order.
+/// A decoded evidence payload. A pair is always the same node, installation
+/// and slot with distinct `attempt || envelope_hash` keys in ascending order;
+/// the attempts may differ, and then the hashes may be equal.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ForkEvidence {
     Observation {
@@ -36,9 +39,9 @@ pub enum ForkEvidence {
 
 impl ForkEvidence {
     /// Builds a pair in canonical order, refusing anything that is not one
-    /// node's two different winners for the same slot and attempt.
+    /// node's and installation's two different winners for the same slot.
     pub fn equivocation(pre_epoch: u64, a: SlotReceipt, b: SlotReceipt) -> Result<Self, ErrorCode> {
-        let (first, second) = if a.envelope_hash <= b.envelope_hash {
+        let (first, second) = if a.pair_key() <= b.pair_key() {
             (a, b)
         } else {
             (b, a)
@@ -120,7 +123,7 @@ impl ForkEvidence {
 }
 
 fn check_pair(first: &SlotReceipt, second: &SlotReceipt) -> Result<(), ErrorCode> {
-    if !first.same_position(second) || first.envelope_hash >= second.envelope_hash {
+    if !first.same_slot(second) || first.pair_key() >= second.pair_key() {
         return Err(ErrorCode::EvidenceNotEquivocation);
     }
     Ok(())
