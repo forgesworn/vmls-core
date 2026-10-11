@@ -5,6 +5,8 @@
 //! [`MAX_REQUEST_BYTES`] before parsing. The witness answers with a
 //! [`crate::receipt::WitnessReceipt`].
 
+use alloc::vec::Vec;
+
 use crate::cbor::{self, Reader};
 use crate::{ErrorCode, MAX_SAFE_INTEGER};
 

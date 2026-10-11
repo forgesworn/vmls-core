@@ -15,7 +15,9 @@
 //! differently. Which tables and columns are covered, and in what order, is
 //! the adapter's frozen schema manifest, whose hash is bound here.
 
-use std::collections::BTreeMap;
+use alloc::{string::String, vec::Vec};
+
+use alloc::collections::BTreeMap;
 
 use sha2::{Digest, Sha256};
 
@@ -110,8 +112,8 @@ impl Manifest {
     /// recomputation.
     pub fn insert_hashed(&mut self, key: Vec<u8>, value_hash: [u8; 32]) -> Result<(), ErrorCode> {
         match self.entries.entry(key) {
-            std::collections::btree_map::Entry::Occupied(_) => Err(ErrorCode::NonCanonical),
-            std::collections::btree_map::Entry::Vacant(slot) => {
+            alloc::collections::btree_map::Entry::Occupied(_) => Err(ErrorCode::NonCanonical),
+            alloc::collections::btree_map::Entry::Vacant(slot) => {
                 slot.insert(value_hash);
                 Ok(())
             }

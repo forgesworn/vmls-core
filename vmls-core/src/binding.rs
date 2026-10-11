@@ -29,6 +29,12 @@
 //! [`LEAF_BINDING_EXTENSION_TYPE`], required through the group's
 //! required-capabilities, so every member verifies every leaf (decision D2).
 
+use alloc::{
+    borrow::ToOwned,
+    string::{String, ToString},
+    vec::Vec,
+};
+
 use k256::schnorr::{Signature, VerifyingKey};
 use sha2::{Digest, Sha256};
 

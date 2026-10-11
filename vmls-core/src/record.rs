@@ -16,6 +16,8 @@
 //! counted and never escalates to needs-recovery, because anyone who holds a
 //! mailbox value can produce one.
 
+use alloc::vec::Vec;
+
 use crate::cbor::{self, Reader};
 use crate::derive::{self, AEAD_KEY_BYTES, AEAD_NONCE_BYTES};
 use crate::{ErrorCode, MAILBOX_CAPABILITY_BYTES};
@@ -282,6 +284,7 @@ mod tests {
     use super::*;
     use aes_gcm::aead::{Aead, KeyInit, Payload};
     use aes_gcm::{Aes128Gcm, Nonce};
+    use alloc::vec;
 
     pub(crate) struct TestAead;
 

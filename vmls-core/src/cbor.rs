@@ -7,6 +7,8 @@
 //! against the remaining input before a slice is taken; nothing allocates in
 //! proportion to a claimed length.
 
+use alloc::vec::Vec;
+
 use crate::ErrorCode;
 
 const MAJOR_UINT: u8 = 0;

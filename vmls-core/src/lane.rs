@@ -9,6 +9,8 @@
 //! sheltered here; returning to a sheltered route is a new, visible
 //! decision. The wording keys name rows of the client's wording table.
 
+use alloc::vec::Vec;
+
 /// What the composer is attached to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Conversation {

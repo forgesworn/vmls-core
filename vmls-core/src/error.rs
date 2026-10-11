@@ -216,7 +216,7 @@ impl fmt::Display for ErrorCode {
     }
 }
 
-impl std::error::Error for ErrorCode {}
+impl core::error::Error for ErrorCode {}
 
 impl From<EnvelopeError> for ErrorCode {
     fn from(error: EnvelopeError) -> Self {
