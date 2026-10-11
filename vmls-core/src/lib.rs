@@ -21,6 +21,12 @@
 //! The VMLS/1 transport contract is not yet published; the vectors in
 //! `vectors/` are the reference for every byte layout here.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+
+use alloc::vec::Vec;
+
 use core::fmt;
 
 pub mod allocation_witness;
@@ -83,7 +89,7 @@ impl fmt::Display for EnvelopeError {
     }
 }
 
-impl std::error::Error for EnvelopeError {}
+impl core::error::Error for EnvelopeError {}
 
 impl Envelope {
     /// Writes the sole accepted VMLS/1 outer shape.
@@ -233,6 +239,7 @@ impl<'a> Cursor<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::{string::String, vec};
     use serde::Deserialize;
 
     const MAILBOX: [u8; MAILBOX_CAPABILITY_BYTES] = [0x61; MAILBOX_CAPABILITY_BYTES];

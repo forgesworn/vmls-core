@@ -189,6 +189,31 @@ fn witness_receipt_verifies_and_refuses() {
 }
 
 #[test]
+fn strict_receipts_refuse_small_order_key_forgeries() {
+    let d = design();
+    let mut signature = [0; 64];
+    signature[0] = 1; // identity R, S=0
+    let mut identity = [0; 32];
+    identity[0] = 1;
+    let order_two = hex32("ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f");
+    for weak in [identity, order_two] {
+        let mut slot = SlotReceipt::parse(&hex(&d.slot_receipt_hex)).unwrap();
+        slot.node = weak;
+        slot.signature = signature;
+        assert_eq!(
+            SlotReceipt::verified(&slot.encode(), &weak),
+            Err(ErrorCode::ReceiptSignatureInvalid)
+        );
+        let mut witness = WitnessReceipt::parse(&hex(&d.witness_hex)).unwrap();
+        witness.signature = signature;
+        assert_eq!(
+            WitnessReceipt::verified(&witness.encode(), &weak, &CHALLENGE),
+            Err(ErrorCode::ReceiptSignatureInvalid)
+        );
+    }
+}
+
+#[test]
 fn evidence_is_a_verified_equivocation_pair() {
     let d = design();
     let node = hex32(&d.node_hex);

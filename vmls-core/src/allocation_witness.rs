@@ -5,6 +5,8 @@
 //! for its verified Link peer before touching its witness store. It must never
 //! treat signature verification alone as token authorisation or writer enrolment.
 
+use alloc::vec::Vec;
+
 use core::fmt;
 use ed25519_dalek::{Signature, VerifyingKey};
 use sha2::{Digest, Sha256};
@@ -40,7 +42,7 @@ impl fmt::Display for ForwardingError {
         })
     }
 }
-impl std::error::Error for ForwardingError {}
+impl core::error::Error for ForwardingError {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]

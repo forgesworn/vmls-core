@@ -19,6 +19,8 @@
 //! mailbox (see `derive::introduction`). Receiving a valid one is the only
 //! signal that a person's device speaks VMLS/1; nothing is advertised.
 
+use alloc::vec::Vec;
+
 use crate::ErrorCode;
 use crate::binding::{
     BindingPolicy, CarryingLeaf, LeafBinding, MAX_BINDING_BYTES, VerifiedBinding,

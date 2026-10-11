@@ -206,6 +206,16 @@ fn strict_ed25519_rejects_identity_keys_small_order_r_and_noncanonical_s() {
         ForwardedRequest::verified(&identity, Method::Read, &witness(&f)),
         Err(ForwardingError::SignatureInvalid)
     );
+    // Order-two key with identity R and S=0 passes cofactored verifiers.
+    // The shared strict path must refuse it in both std and no_std builds.
+    let mut order_two = identity;
+    order_two[2..34].copy_from_slice(&hex32(
+        "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+    ));
+    assert_eq!(
+        ForwardedRequest::verified(&order_two, Method::Read, &witness(&f)),
+        Err(ForwardingError::SignatureInvalid)
+    );
     let mut small_r = raw.clone();
     small_r[end..end + 32].fill(0);
     small_r[end] = 1;

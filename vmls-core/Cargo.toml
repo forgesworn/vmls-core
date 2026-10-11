@@ -5,7 +5,8 @@ edition = "2024"
 # 1.85 is the edition-2024 floor and is not raised by the D7 crates below:
 # k256 0.13.4 declares 1.65; sha2 0.10.9 and hkdf 0.12.4 are edition-2018
 # crates that declare none. The edition's MSRV-aware resolver keeps the lock
-# within 1.85. Only the pinned 1.94.1 toolchain has been run.
+# within 1.85. Library builds are checked on 1.85 and pinned 1.94.1,
+# with the same codecs also checked without std on bare-metal targets.
 rust-version = "1.85"
 license = "MIT"
 publish = false
@@ -24,6 +25,12 @@ hkdf = { version = "0.12.4", default-features = false }
 # witness receipts under the pinned Link node key. Same version as the
 # OpenMLS graph in vmls-mls; no default features (no std, no RNG).
 ed25519-dalek = { version = "=2.2.0", default-features = false }
+
+# Hosted callers retain the default. Disable it to share the same codecs and
+# strict verifier with no_std + alloc consumers; an allocator is still required.
+[features]
+default = ["std"]
+std = []
 
 [dev-dependencies]
 # Test-only AES-128-GCM for the record vectors. In production the AEAD is the

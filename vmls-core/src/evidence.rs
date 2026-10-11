@@ -10,6 +10,8 @@
 //! unsigned: it never associates an unrelated slot with a session, which is
 //! the engine's job.
 
+use alloc::vec::Vec;
+
 use crate::ErrorCode;
 use crate::receipt::{SLOT_RECEIPT_BYTES, SlotReceipt};
 

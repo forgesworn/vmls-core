@@ -5,6 +5,11 @@ bucket-padded inner record, the `leaf-binding/1` extension with its BIP-340
 and device-credential checks, the one-time KeyPackage capability record, the
 exporter-based derivations and the send-lane decision table.
 
+Default builds support hosted callers. Disable default features to compile
+with `no_std + alloc`; an allocator is still required. This preserves the same
+canonical layouts and strict Ed25519 verifier. A target build alone does not
+prove constrained-device image size, stack use or runtime acceptance.
+
 It deliberately does not implement MLS. It owns every byte layout VMLS/1 puts
 around MLS so that browsers, phones and boxes parse with one codec, and a box
 can store and route records without linking MLS at all.
@@ -18,4 +23,5 @@ there and copied here. Status: pre-release, not independently audited.
 
 ```sh
 cd vmls-core && cargo test
+cargo test --no-default-features
 ```
