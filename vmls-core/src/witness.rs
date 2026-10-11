@@ -12,6 +12,12 @@ use crate::{ErrorCode, MAX_SAFE_INTEGER};
 pub const WITNESS_REQUEST_VERSION: u64 = 1;
 /// Requests larger than this are refused before any parsing.
 pub const MAX_REQUEST_BYTES: usize = 256;
+/// The header on a witness's own refusal (a `403` for an unknown subject or
+/// another writer's, alike), set to [`REFUSAL_VALUE`]. No other `403` on
+/// the Link router carries it, so a client tells the witness's refusal from
+/// an outage by it (P2-R-06).
+pub const REFUSAL_HEADER: &str = "vmls-witness";
+pub const REFUSAL_VALUE: &str = "refused";
 
 /// `read(subject, challenge)`.
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -23,6 +23,7 @@
 
 use core::fmt;
 
+pub mod allocation_witness;
 pub mod binding;
 pub mod capability;
 mod cbor;
