@@ -66,11 +66,15 @@ impl Request {
         }
     }
 
-    fn encode_checked(&self) -> Result<Vec<u8>, ForwardingError> {
-        let body = match self {
+    fn encode(&self) -> Vec<u8> {
+        match self {
             Self::Read(r) => r.encode(),
             Self::Advance(r) => r.encode(),
-        };
+        }
+    }
+
+    fn encode_checked(&self) -> Result<Vec<u8>, ForwardingError> {
+        let body = self.encode();
         // Typed requests still need the canonical decoder's sequence bounds.
         Self::parse(self.method(), &body)?;
         Ok(body)
@@ -136,7 +140,7 @@ impl ForwardedRequest {
             return Err(ForwardingError::WrongMethod);
         }
         let length = u16::from_be_bytes([bytes[66], bytes[67]]) as usize;
-        if length == 0 || length > MAX_REQUEST_BYTES || bytes.len() != OVERHEAD_BYTES + length {
+        if length > MAX_REQUEST_BYTES || bytes.len() != OVERHEAD_BYTES + length {
             return Err(ForwardingError::Malformed);
         }
         let request = Request::parse(expected_method, &bytes[HEADER_BYTES..HEADER_BYTES + length])?;
@@ -151,8 +155,9 @@ impl ForwardedRequest {
     }
 
     fn unsigned(&self) -> Vec<u8> {
-        // Construction and parsing both validate the immutable typed body.
-        let body = self.request.encode_checked().expect("validated request");
+        // Validated once at construction or parse; fields are private after,
+        // so a plain encode of the immutable typed body is sufficient here.
+        let body = self.request.encode();
         let mut out = Vec::with_capacity(HEADER_BYTES + body.len());
         out.extend_from_slice(&[VERSION, self.request.method() as u8]);
         out.extend_from_slice(&self.writer);
