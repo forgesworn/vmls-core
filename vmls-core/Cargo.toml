@@ -5,9 +5,9 @@ edition = "2024"
 # 1.85 is the edition-2024 floor and is not raised by the D7 crates below:
 # k256 0.13.4 declares 1.65; sha2 0.10.9 and hkdf 0.12.4 are edition-2018
 # crates that declare none. The edition's MSRV-aware resolver keeps the lock
-# within 1.85. Only the pinned 1.94.1 toolchain has been run locally;
-# the 1.85 MSRV and bare-metal no_std builds are not yet exercised
-# automatically.
+# within 1.85. The published repository's CI checks the 1.85 floor and
+# the pinned 1.94.1 toolchain in both feature modes and compiles the
+# no_std codecs for a bare-metal thumbv7em target.
 rust-version = "1.85"
 license = "MIT"
 publish = false
