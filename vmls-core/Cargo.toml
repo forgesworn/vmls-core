@@ -2,8 +2,10 @@
 name = "vmls-core"
 version = "0.1.0"
 edition = "2024"
-# The patched crypto-bigint 0.7.6 graph requires Rust 1.87. The same
-# codecs and verifier remain usable without std on bare-metal targets.
+# The patched crypto-bigint 0.7.6 graph requires Rust 1.87. The published
+# repository's CI checks the 1.87 floor and the pinned 1.94.1 toolchain in
+# both feature modes and compiles the no_std codecs for a bare-metal
+# thumbv7em target.
 rust-version = "1.87"
 license = "MIT"
 publish = false
