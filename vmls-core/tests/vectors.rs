@@ -347,16 +347,15 @@ struct RecordExpect {
 
 /// x coordinate of `scalar * lift_x(point)`, as the platform ECDH returns.
 fn ecdh_x(scalar_hex: &str, x_only_hex: &str) -> [u8; 32] {
-    use k256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
-    use k256::{AffinePoint, EncodedPoint, NonZeroScalar, ProjectivePoint};
+    use k256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
+    use k256::{AffinePoint, NonZeroScalar, ProjectivePoint};
     let scalar = NonZeroScalar::try_from(hex(scalar_hex).as_slice()).unwrap();
     let mut compressed = vec![0x02];
     compressed.extend_from_slice(&hex(x_only_hex));
-    let point =
-        AffinePoint::from_encoded_point(&EncodedPoint::from_bytes(&compressed).unwrap()).unwrap();
+    let point = AffinePoint::from_sec1_bytes(&compressed).unwrap();
     let shared = (ProjectivePoint::from(point) * *scalar).to_affine();
     shared
-        .to_encoded_point(false)
+        .to_sec1_point(false)
         .x()
         .unwrap()
         .as_slice()

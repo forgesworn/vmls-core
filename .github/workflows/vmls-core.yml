@@ -20,11 +20,11 @@ jobs:
           persist-credentials: false
       - name: Canonical VMLS envelope codec
         run: cargo test --manifest-path vmls-core/Cargo.toml --locked
-      - name: Declared Rust 1.85 floor in both modes
+      - name: Declared Rust 1.87 floor in both modes
         run: |
-          rustup toolchain install 1.85.0 --profile minimal
-          cargo +1.85.0 check --manifest-path vmls-core/Cargo.toml --lib --locked
-          cargo +1.85.0 check --manifest-path vmls-core/Cargo.toml --no-default-features --lib --locked
+          rustup toolchain install 1.87.0 --profile minimal
+          cargo +1.87.0 check --manifest-path vmls-core/Cargo.toml --lib --locked
+          cargo +1.87.0 check --manifest-path vmls-core/Cargo.toml --no-default-features --lib --locked
       - name: Pinned 1.94.1 toolchain in both modes
         run: |
           rustup toolchain install 1.94.1 --profile minimal

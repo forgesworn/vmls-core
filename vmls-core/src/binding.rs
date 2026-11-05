@@ -192,7 +192,7 @@ fn push_json_string(out: &mut Vec<u8>, text: &str) {
 }
 
 fn schnorr_verify(pubkey: &[u8; 32], message: &[u8; 32], sig: &[u8; 64]) -> Option<bool> {
-    let key = VerifyingKey::from_bytes(pubkey).ok()?;
+    let key = VerifyingKey::from_slice(pubkey).ok()?;
     Some(
         Signature::try_from(sig.as_slice())
             .map(|sig| key.verify_raw(message, &sig).is_ok())
