@@ -492,3 +492,31 @@ change. Human review on issue #7, downstream interoperability, independent
 regeneration, physical-device acceptance, fuzzing, side-channel assessment,
 formal proof, hosted 32-bit test execution, and production approval remain
 separate gates.
+
+## 10. Final independent AI compatibility review
+
+Status: **Claude and Codex independently approve the contract/vector
+compatibility gate at `2d08414`; MRR-01 closed**
+
+Approved implementation: `2d0841442194a939e0e946f199b3a00bbcc73916`.
+Their final reports are `reviews/vmls1-2d08414-claude.md` and
+`reviews/vmls1-2d08414-codex.md`; the consolidated approval is
+`reviews/vmls1-2d08414-ai-review.md`. Both found AI-01 through AI-11 resolved,
+all seven residual first-re-review conditions closed, and no confirmed new
+finding. Codex independently recomputed all 11 vector hashes and ran the Node
+reader, obtaining `PASS 11 suites, 29169 independent assertions`. Both accepted
+caller prevalidation as sufficient to close MRR-01. These are independent AI
+reviews, not human security approval or production readiness.
+
+[PR CI run 42209686581](https://github.com/forgesworn/vmls-core/actions/runs/42209686581)
+passed every step at the approved commit: all 11 vector hashes, formatting,
+dependency audit, Node reader, both Rust feature modes, Rust 1.87.0 and 1.94.1,
+`thumbv7em-none-eabi`, and `i686-unknown-linux-gnu` test compilation. Local
+Android 32-bit compilation also passed. Hosted 32-bit execution remains not run.
+
+The final review-report delivery commit is documentation-only and does not alter
+the approved implementation. Issue #7 remains open for named human review.
+Independent regeneration, downstream interoperability, physical-device
+acceptance, fuzzing, side-channel assessment, formal proof, hosted 32-bit
+execution, a private security-reporting route, and production approval remain
+separate gates.
