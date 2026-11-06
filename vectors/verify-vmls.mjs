@@ -847,7 +847,16 @@ function hostileInputs(file) {
   return out;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
+function isDirectExecution() {
+  if (!process.argv[1] || process.argv[1] === "-") return false;
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectExecution()) {
 suite("envelope", () => {
   const file = json("vmls-core/vectors/vmls-envelope-v1.json");
   for (const test of file.cases) {
@@ -1010,6 +1019,29 @@ suite("send lanes", () => {
   }
 });
 
+function verifierUsesPersonScope(test) {
+  return !["room-passes", "person-presented-to-room", "room-with-scope-tag"].includes(test.name);
+}
+
+function deviceCredentialAccepted(file, test) {
+  const event = test.event;
+  const single = (name) => {
+    const matches = event.tags.filter((tag) => tag[0] === name);
+    return matches.length === 1 ? matches[0][1] : null;
+  };
+  const verifierPerson = verifierUsesPersonScope(test);
+  const target = verifierPerson ? event.pubkey : file.roomId;
+  const expiry = Number(single("expiration"));
+  return single("d") === target
+    && single("device") === file.testOnlyKeys.device
+    && (verifierPerson ? single("scope") === "person" : single("scope") === null)
+    && event.created_at <= file.now + 600
+    && expiry > file.now
+    && expiry <= event.created_at + 30 * 86400
+    && expiry <= file.now + 30 * 86400
+    && !test.tombstoned;
+}
+
 suite("device credentials", () => {
   const file = json("vectors/device-credential.json");
   const nostrId = (event) => sha256(Buffer.from(JSON.stringify([0, event.pubkey, event.created_at, event.kind, event.tags, event.content])));
@@ -1020,22 +1052,13 @@ suite("device credentials", () => {
     const id = nostrId(event);
     equal(id, hex(event.id), `credential ${test.name}: id`);
     ok(schnorrVerify(hex(event.pubkey), id, hex(event.sig)), `credential ${test.name}: signature`);
-    const tags = (name) => event.tags.filter((tag) => tag[0] === name);
-    const single = (name) => tags(name).length === 1 ? tags(name)[0][1] : null;
-    const person = Object.hasOwn(test.expect, "identity");
-    const target = person ? test.expect.identity : test.expect.roomId;
-    const expiry = Number(single("expiration"));
-    const accepted = single("d") === target
-      && single("device") === file.testOnlyKeys.device
-      && (person ? single("scope") === "person" : single("scope") === null)
-      && event.created_at <= file.now + 600
-      && expiry > file.now
-      && expiry <= event.created_at + 30 * 86400
-      && expiry <= file.now + 30 * 86400
-      && !test.tombstoned;
-    equal(accepted, test.ok, `credential ${test.name}: acceptance`);
+    equal(deviceCredentialAccepted(file, test), test.ok, `credential ${test.name}: acceptance`);
     if (test.tombstoned) equal(file.tombstone.tags[0][1], event.id, "tombstone targets credential");
   }
+  const poisoned = structuredClone(file);
+  const scenario = poisoned.cases.find((test) => test.name === "room-presented-as-person");
+  scenario.expect = { roomId: poisoned.roomId };
+  ok(deviceCredentialAccepted(poisoned, scenario) === scenario.ok, "expected scope field cannot change acceptance");
 });
 
 suite("security design", () => {

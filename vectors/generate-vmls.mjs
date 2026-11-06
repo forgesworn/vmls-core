@@ -231,7 +231,7 @@ function verifierUsesPersonScope(test) {
 
 function regenerateDeviceCredentials(file) {
   const out = clone(file);
-  const revokedId = out.cases.find((test) => test.name === "person-passes").event.id;
+  const revokedId = nostrId(out.cases.find((test) => test.name === "person-passes").event);
   out.tombstone.tags = out.tombstone.tags.map((tag) => tag[0] === "e" ? ["e", revokedId] : tag);
   out.tombstone.id = nostrId(out.tombstone);
   assert(schnorrVerify(hex(out.tombstone.pubkey), nostrIdBytes(out.tombstone), hex(out.tombstone.sig)), "tombstone signature");
@@ -265,14 +265,13 @@ function signSlot(raw, seed) {
   return out;
 }
 
-function buildSlot(raw, seed, node, envelope, installation) {
-  const old = decodeSlotReceipt(raw);
+function buildSlot(raw, seed, node, envelope, installation, slot, attempt) {
   const out = Buffer.alloc(197);
   out[0] = 1;
   node.copy(out, 1);
   installation.copy(out, 33);
-  old.slot.copy(out, 65);
-  out.writeUInt32BE(old.attempt, 97);
+  slot.copy(out, 65);
+  out.writeUInt32BE(attempt, 97);
   sha256(envelope).copy(out, 101);
   return signSlot(out, seed);
 }
@@ -285,10 +284,10 @@ function signWitness(raw, seed) {
   return out;
 }
 
-function buildEvidence(raw, seed, node, envelopes, installation) {
+function buildEvidence(raw, seed, node, envelopes, installation, slot, attempts) {
   const out = Buffer.from(raw);
   for (let i = 0; i < out[9]; i += 1) {
-    buildSlot(out.subarray(10 + i * 197, 10 + (i + 1) * 197), seed, node, envelopes[i], installation).copy(out, 10 + i * 197);
+    buildSlot(out.subarray(10 + i * 197, 10 + (i + 1) * 197), seed, node, envelopes[i], installation, slot, attempts[i]).copy(out, 10 + i * 197);
   }
   return out;
 }
@@ -298,15 +297,16 @@ function regenerateSecurityDesign(file) {
   const seed = hex(out.seedHex);
   const node = edPublicFromSeed(seed);
   const installation = hex(out.installationHex);
+  const slot = hex(out.slotHex);
   out.nodeHex = hexText(node);
-  out.slotReceiptHex = hexText(buildSlot(hex(out.slotReceiptHex), seed, node, hex(out.envelopeHex), installation));
-  out.otherSlotReceiptHex = hexText(buildSlot(hex(out.otherSlotReceiptHex), seed, node, hex(out.otherEnvelopeHex), installation));
-  out.relabelledSlotReceiptHex = hexText(buildSlot(hex(out.relabelledSlotReceiptHex), seed, node, hex(out.envelopeHex), installation));
-  out.foreignSlotReceiptHex = hexText(buildSlot(hex(out.foreignSlotReceiptHex), seed, node, hex(out.envelopeHex), hex(out.foreignInstallationHex)));
+  out.slotReceiptHex = hexText(buildSlot(hex(out.slotReceiptHex), seed, node, hex(out.envelopeHex), installation, slot, out.baseAttempt));
+  out.otherSlotReceiptHex = hexText(buildSlot(hex(out.otherSlotReceiptHex), seed, node, hex(out.otherEnvelopeHex), installation, slot, out.baseAttempt));
+  out.relabelledSlotReceiptHex = hexText(buildSlot(hex(out.relabelledSlotReceiptHex), seed, node, hex(out.envelopeHex), installation, slot, out.relabelledAttempt));
+  out.foreignSlotReceiptHex = hexText(buildSlot(hex(out.foreignSlotReceiptHex), seed, node, hex(out.envelopeHex), hex(out.foreignInstallationHex), slot, out.foreignAttempt));
   out.slotDigestHex = hexText(decodeSlotReceipt(hex(out.slotReceiptHex)).digest);
-  out.evidenceHex = hexText(buildEvidence(hex(out.evidenceHex), seed, node, [hex(out.otherEnvelopeHex), hex(out.envelopeHex)], installation));
-  out.relabelledEvidenceHex = hexText(buildEvidence(hex(out.relabelledEvidenceHex), seed, node, [hex(out.envelopeHex), hex(out.envelopeHex)], installation));
-  out.attemptOrderEvidenceHex = hexText(buildEvidence(hex(out.attemptOrderEvidenceHex), seed, node, [hex(out.envelopeHex), hex(out.otherEnvelopeHex)], installation));
+  out.evidenceHex = hexText(buildEvidence(hex(out.evidenceHex), seed, node, [hex(out.otherEnvelopeHex), hex(out.envelopeHex)], installation, slot, [out.baseAttempt, out.baseAttempt]));
+  out.relabelledEvidenceHex = hexText(buildEvidence(hex(out.relabelledEvidenceHex), seed, node, [hex(out.envelopeHex), hex(out.envelopeHex)], installation, slot, [out.baseAttempt, out.relabelledAttempt]));
+  out.attemptOrderEvidenceHex = hexText(buildEvidence(hex(out.attemptOrderEvidenceHex), seed, node, [hex(out.envelopeHex), hex(out.otherEnvelopeHex)], installation, slot, [out.baseAttempt, out.relabelledAttempt]));
   out.witnessHex = hexText(signWitness(hex(out.witnessHex), seed));
   const epoch = hex(out.epochSecretHex);
   const leaf = hex(out.leafHex);
@@ -524,6 +524,10 @@ function negativeControl() {
   const rebuilt = regenerateSecurityDesign(installationPoison);
   assert.notEqual(rebuilt.slotReceiptHex, design.slotReceiptHex);
   assert(decodeSlotReceipt(hex(rebuilt.slotReceiptHex)).installation.equals(Buffer.alloc(32, 0x44)));
+  const attemptPoison = clone(design);
+  attemptPoison.relabelledAttempt = 5;
+  const rebuiltAttempt = regenerateSecurityDesign(attemptPoison);
+  assert.equal(decodeSlotReceipt(hex(rebuiltAttempt.relabelledSlotReceiptHex)).attempt, 5);
 }
 
 for (const [relative, generate] of Object.entries(generators)) {
@@ -540,4 +544,6 @@ for (const [relative, generate] of Object.entries(generators)) {
   console.log(`ok ${relative}`);
 }
 negativeControl();
-console.log("PASS 11 vector files regenerated; content and exact bytes match; negative control passed");
+console.log(write
+  ? "PASS 11 vector files written; negative control passed"
+  : "PASS 11 vector files regenerated; content and exact bytes match; negative control passed");

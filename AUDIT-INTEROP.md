@@ -118,7 +118,7 @@ node --check vectors/verify-vmls.mjs
 node vectors/verify-vmls.mjs
 ```
 
-The expected final line is `PASS 11 suites, 29169 independent assertions`.
+The expected final line is `PASS 11 suites, 29170 independent assertions`.
 The reader uses `node:crypto`, a separate canonical CBOR reader, and test-only
 BigInt secp256k1 arithmetic. It recomputes signatures, derivations, ECDH,
 sealed bytes, manifests and all hostile outcomes without calling Rust. Its
@@ -492,7 +492,7 @@ The follow-up addresses every consolidated finding:
 
 ### Verification
 
-On the follow-up tree, Node reported `PASS 11 suites, 29169 independent
+On the follow-up tree, Node reported `PASS 11 suites, 29170 independent
 assertions`. Each Rust feature mode reported **53 passed and zero failed**,
 including all new regressions. Rust 1.87.0 and 1.94.1 checks passed in both
 modes; `thumbv7em-none-eabi`, `i686-linux-android`, and
@@ -519,7 +519,7 @@ Their final reports are `reviews/vmls1-2d08414-claude.md` and
 `reviews/vmls1-2d08414-ai-review.md`. Both found AI-01 through AI-11 resolved,
 all seven residual first-re-review conditions closed, and no confirmed new
 finding. Codex independently recomputed all 11 vector hashes and ran the Node
-reader, obtaining `PASS 11 suites, 29169 independent assertions`. Both accepted
+reader, obtaining `PASS 11 suites, 29170 independent assertions`. Both accepted
 caller prevalidation as sufficient to close MRR-01. These are independent AI
 reviews, not human security approval or production readiness.
 
@@ -546,8 +546,11 @@ fields and error outcomes for every published fixture family: envelope, binding,
 capability, derivations/records, lanes, device credentials, security design,
 witness requests, manifests, allocation forwarding, and the hostile corpus.
 Deterministic receipt, evidence, witness, and allocation signatures are
-recomputed from public fixture seeds. Receipt bodies, installations, slots, and
-envelope hashes are rebuilt from scenario fields rather than signed unchanged.
+recomputed from public fixture seeds. Receipt bodies, installations, slots,
+attempts, and envelope hashes are rebuilt from explicit scenario fields rather
+than signed unchanged. Witness bodies and evidence headers retain their
+scenario-provided values. Signed binding and capability inputs are retained and
+independently verified rather than regenerated.
 
 Run from the repository root with Node.js 20 or later:
 
@@ -568,10 +571,11 @@ Ed25519 signatures.
 
 Negative controls require a trailing-byte envelope to change outcome and rendered
 bytes, prove that changing only an expected identity cannot influence validation,
-reject a changed retained public key, and require a changed installation to alter
-the rebuilt receipt. Importing `verify-vmls.mjs` as a library does not execute
+reject a changed retained public key, and require changed installation and attempt
+inputs to alter the rebuilt receipt. Write mode reports files written rather than
+compatibility equality. Importing `verify-vmls.mjs` as a library does not execute
 the suites. Direct execution resolves the entry path's real path and reports
-`PASS 11 suites, 29169 independent assertions`, including through a symlink.
+`PASS 11 suites, 29170 independent assertions`, including through a symlink.
 
 CI runs the reader and generator and asserts their PASS lines. Local verification
 also passed 53 Rust tests in each feature mode, both Rust toolchains,
