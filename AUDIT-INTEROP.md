@@ -55,7 +55,8 @@ source revision. Re-run the relevant checks on the exact review candidate.
   outcome for all 11 files, with a negative control.
 - No independent security audit, coverage-guided fuzzing result, formal proof,
   or side-channel assessment is asserted.
-- No downstream interoperability or physical-device result is asserted.
+- No physical-device result is asserted. Heartwood has only the scoped
+  host/vector interoperability result recorded in sections 5 and 12.
 - Bare-metal compilation does not measure final image size, allocator demand,
   stack use, latency, or power consumption.
 
@@ -607,8 +608,10 @@ commit `ad83fca8dd34bea00e2468764cec7a35c4f9852a` pins both Heartwood manifests
 and locks to this repository's `1c0adec` revision (crate 0.1.2), with default
 features disabled and no other dependency movement. Claude and Codex reviewed
 that exact commit read-only and both recommend approve, conditional on hosted
-firmware-size CI. These are independent AI reviews, not human or production
-approval.
+firmware-size CI. Their reports are `reviews/heartwood-ad83fca-claude.md` and
+`reviews/heartwood-ad83fca-codex.md`; the consolidated disposition and later
+documentation reviews are in `reviews/heartwood-ad83fca-ai-review.md`. These are
+independent AI reviews, not human or production approval.
 
 Local rustc 1.94.1 verification passed 1230 full k256 unit tests and 13
 integration tests, 359 secp256k1 baseline unit tests and ten integration tests,
@@ -620,7 +623,8 @@ journal generator and 36 actual-ECDH VMLS Introduction vectors. `cargo deny`
 reported advisories, bans, licences and sources OK.
 
 Heartwood PR CI 42278785850 passed every job, including V3, V4, T-Display, C6
-and ESP8266 builds. Its V4 app image is 2,094,800 bytes against the
+and ESP8266 builds. Post-merge CI 42281172418 also passed at `472ae52`. The V4
+app image is 2,094,800 bytes against the
 2,097,152-byte slot, leaving 2,352 bytes. Local old/new images were both
 oversize (2,126,656/2,126,304 bytes), so local size is explicitly not a pass;
 the hosted candidate result is the accepted compilation/image evidence. No
