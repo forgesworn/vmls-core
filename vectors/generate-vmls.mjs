@@ -240,6 +240,7 @@ function regenerateDeviceCredentials(file) {
     const id = nostrIdBytes(event);
     event.id = hexText(id);
     assert(schnorrVerify(hex(event.pubkey), id, hex(event.sig)), `${test.name}: signature`);
+    if (test.tombstoned) assert.equal(event.id, revokedId, `${test.name}: tombstone target`);
     const verifierPerson = verifierUsesPersonScope(test);
     const target = verifierPerson ? event.pubkey : out.roomId;
     const expiry = Number(singleTag(event.tags, "expiration"));
@@ -265,7 +266,7 @@ function signSlot(raw, seed) {
   return out;
 }
 
-function buildSlot(raw, seed, node, envelope, installation, slot, attempt) {
+function buildSlot(seed, node, envelope, installation, slot, attempt) {
   const out = Buffer.alloc(197);
   out[0] = 1;
   node.copy(out, 1);
@@ -287,7 +288,7 @@ function signWitness(raw, seed) {
 function buildEvidence(raw, seed, node, envelopes, installation, slot, attempts) {
   const out = Buffer.from(raw);
   for (let i = 0; i < out[9]; i += 1) {
-    buildSlot(out.subarray(10 + i * 197, 10 + (i + 1) * 197), seed, node, envelopes[i], installation, slot, attempts[i]).copy(out, 10 + i * 197);
+    buildSlot(seed, node, envelopes[i], installation, slot, attempts[i]).copy(out, 10 + i * 197);
   }
   return out;
 }
@@ -299,10 +300,10 @@ function regenerateSecurityDesign(file) {
   const installation = hex(out.installationHex);
   const slot = hex(out.slotHex);
   out.nodeHex = hexText(node);
-  out.slotReceiptHex = hexText(buildSlot(hex(out.slotReceiptHex), seed, node, hex(out.envelopeHex), installation, slot, out.baseAttempt));
-  out.otherSlotReceiptHex = hexText(buildSlot(hex(out.otherSlotReceiptHex), seed, node, hex(out.otherEnvelopeHex), installation, slot, out.baseAttempt));
-  out.relabelledSlotReceiptHex = hexText(buildSlot(hex(out.relabelledSlotReceiptHex), seed, node, hex(out.envelopeHex), installation, slot, out.relabelledAttempt));
-  out.foreignSlotReceiptHex = hexText(buildSlot(hex(out.foreignSlotReceiptHex), seed, node, hex(out.envelopeHex), hex(out.foreignInstallationHex), slot, out.foreignAttempt));
+  out.slotReceiptHex = hexText(buildSlot(seed, node, hex(out.envelopeHex), installation, slot, out.baseAttempt));
+  out.otherSlotReceiptHex = hexText(buildSlot(seed, node, hex(out.otherEnvelopeHex), installation, slot, out.baseAttempt));
+  out.relabelledSlotReceiptHex = hexText(buildSlot(seed, node, hex(out.envelopeHex), installation, slot, out.relabelledAttempt));
+  out.foreignSlotReceiptHex = hexText(buildSlot(seed, node, hex(out.envelopeHex), hex(out.foreignInstallationHex), slot, out.foreignAttempt));
   out.slotDigestHex = hexText(decodeSlotReceipt(hex(out.slotReceiptHex)).digest);
   out.evidenceHex = hexText(buildEvidence(hex(out.evidenceHex), seed, node, [hex(out.otherEnvelopeHex), hex(out.envelopeHex)], installation, slot, [out.baseAttempt, out.baseAttempt]));
   out.relabelledEvidenceHex = hexText(buildEvidence(hex(out.relabelledEvidenceHex), seed, node, [hex(out.envelopeHex), hex(out.envelopeHex)], installation, slot, [out.baseAttempt, out.relabelledAttempt]));

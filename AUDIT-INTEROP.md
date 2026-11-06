@@ -492,7 +492,7 @@ The follow-up addresses every consolidated finding:
 
 ### Verification
 
-On the follow-up tree, Node reported `PASS 11 suites, 29170 independent
+On the follow-up tree, Node reported `PASS 11 suites, 29169 independent
 assertions`. Each Rust feature mode reported **53 passed and zero failed**,
 including all new regressions. Rust 1.87.0 and 1.94.1 checks passed in both
 modes; `thumbv7em-none-eabi`, `i686-linux-android`, and
@@ -519,7 +519,7 @@ Their final reports are `reviews/vmls1-2d08414-claude.md` and
 `reviews/vmls1-2d08414-ai-review.md`. Both found AI-01 through AI-11 resolved,
 all seven residual first-re-review conditions closed, and no confirmed new
 finding. Codex independently recomputed all 11 vector hashes and ran the Node
-reader, obtaining `PASS 11 suites, 29170 independent assertions`. Both accepted
+reader, obtaining `PASS 11 suites, 29169 independent assertions`. Both accepted
 caller prevalidation as sufficient to close MRR-01. These are independent AI
 reviews, not human security approval or production readiness.
 
@@ -538,7 +538,14 @@ approval remain separate gates.
 
 ## 11. Independent vector regeneration
 
-Status: **implemented and locally verified; independent AI re-review pending**
+Status: **independent AI compatibility review complete; delivery pending**
+
+Final reports: `reviews/vmls1-41aa9db-claude.md`,
+`reviews/vmls1-41aa9db-codex.md`, and `reviews/vmls1-41aa9db-ai-review.md`.
+Claude recommended approve with findings; Codex recommended approve. Both found
+all correction classes resolved and no remaining compatibility defect. The final
+record also restores the historical 29,169 counts in sections 9 and 10 and adds
+the tombstone consistency assertion.
 
 `vectors/generate-vmls.mjs` is included and uses only Node.js built-ins and the
 independent reader's primitive stack, never Rust. It recomputes all expected
@@ -583,6 +590,6 @@ also passed 53 Rust tests in each feature mode, both Rust toolchains,
 dependency audit, all Appendix A hashes, workflow YAML parsing, and
 `git diff --check`.
 
-Next action: obtain independent AI re-review of the generator and its evidence,
-then deliver the tooling. Downstream interoperability, physical-device
-acceptance, hosted 32-bit execution, and the other external gates remain open.
+Next action: deliver the reviewed tooling and run post-merge CI. Downstream
+interoperability, physical-device acceptance, hosted 32-bit execution, and the
+other external gates remain open.
