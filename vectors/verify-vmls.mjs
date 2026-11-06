@@ -171,6 +171,10 @@ class Reader {
     return this.take(1)[0];
   }
 
+  expect(expected) {
+    if (this.byte() !== expected) fail("NonCanonical");
+  }
+
   head(major) {
     const initial = this.byte();
     if (initial >> 5 !== major) fail("NonCanonical");
@@ -706,7 +710,7 @@ function verifyWitnessReceipt(input, pinnedNode, challenge) {
 }
 
 function verifyEvidence(input, pinnedNode) {
-  if (![207, 404].includes(input.length)) fail("Malformed");
+  if (input.length < 10) fail("Malformed");
   if (input[0] !== 1) fail("UnsupportedVersion");
   const count = input[9];
   if (![1, 2].includes(count) || input.length !== 10 + count * 197) fail("Malformed");
@@ -798,18 +802,18 @@ suite("envelope", () => {
   for (const test of file.cases) {
     const actual = outcome(() => {
       const r = new Reader(hex(test.encodedHex));
-      r.map(3);
-      r.key(1);
+      r.expect(0xa3);
+      r.expect(1);
       const profile = r.byte();
       if (profile !== 1) {
         if (profile <= 23) fail("UnsupportedVersion");
         fail("NonCanonical");
       }
-      r.key(2);
+      r.expect(2);
       if (!r.take(2).equals(Buffer.from([0x58, 32]))) fail("NonCanonical");
       const mailbox = r.take(32);
       if (!mailbox.equals(hex(test.activeMailboxHex ?? file.mailboxHex))) fail("WrongMailbox");
-      r.key(3);
+      r.expect(3);
       const ciphertext = envelopeCiphertext(r);
       r.finish();
       return { ciphertext };

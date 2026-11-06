@@ -602,6 +602,16 @@ fn directly_constructed_evidence_pairs_are_rechecked() {
     let ForkEvidence::Equivocation { first, second, .. } = parsed else {
         panic!("expected a pair");
     };
+    let fixture: serde_json::Value =
+        serde_json::from_str(include_str!("../vectors/vmls-security-design-v1.json")).unwrap();
+    let signing_key =
+        ed25519_dalek::SigningKey::from_bytes(&hex32(fixture["seedHex"].as_str().unwrap()));
+    let mut different_slot = second.clone();
+    different_slot.slot = [0x44; 32];
+    different_slot.signature =
+        ed25519_dalek::Signer::sign(&signing_key, &different_slot.digest()).to_bytes();
+    first.verify(&node).unwrap();
+    different_slot.verify(&node).unwrap();
 
     for evidence in [
         ForkEvidence::Equivocation {
@@ -622,10 +632,7 @@ fn directly_constructed_evidence_pairs_are_rechecked() {
         ForkEvidence::Equivocation {
             pre_epoch: 7,
             first: first.clone(),
-            second: SlotReceipt {
-                slot: [0x44; 32],
-                ..second.clone()
-            },
+            second: different_slot,
         },
     ] {
         assert_eq!(

@@ -119,7 +119,7 @@ node --check vectors/verify-vmls.mjs
 node vectors/verify-vmls.mjs
 ```
 
-The expected final line is `PASS 11 suites, 29163 independent assertions`.
+The expected final line is `PASS 11 suites, 29169 independent assertions`.
 The reader uses `node:crypto`, a separate canonical CBOR reader, and test-only
 BigInt secp256k1 arithmetic. It recomputes signatures, derivations, ECDH,
 sealed bytes, manifests and all hostile outcomes without calling Rust. Its
@@ -450,9 +450,9 @@ The follow-up addresses every consolidated finding:
 - AI-01: `ForkEvidence::verify` now rechecks pair invariants before signatures;
   duplicate, reversed, different-installation, and different-slot constructed
   pairs have regression tests.
-- AI-02/AI-03: contract §§3, 6.1, and 10 pin error order; the Node reader matches
-  Rust. Envelope, correctly signed binding, and evidence combined-failure vectors
-  cover the divergences.
+- AI-02/AI-03: contract §§3, 6.1, and 10 pin error order; the Node reader
+  implements the documented Rust order. Envelope, correctly signed binding, and
+  evidence combined-failure vectors cover the identified divergences.
 - AI-04: contract §11 explicitly permits any valid UTF-8 in manifest text and
   namespaces, with control-character known-answer coverage.
 - AI-05: manifest JSON integers are parsed losslessly through conversion to
@@ -465,24 +465,26 @@ The follow-up addresses every consolidated finding:
   plaintexts must never share a record id under one record secret.
 - AI-08: contract and audit headers distinguish the original 0.1.0 baseline from
   the current normative revision in the containing commit.
-- AI-09: CI now checks every Appendix A vector hash, formatting, and dependency
-  audit in addition to the existing reader, test, toolchain, and target gates.
+- AI-09: CI now checks every Appendix A vector hash, formatting, dependency
+  audit, and hosted 32-bit test compilation in addition to the existing reader,
+  test, toolchain, and target gates.
 - AI-10: section 3 explicitly limits the Node reader's strict-signature negative
   evidence; the reader also rejects zero BIP-340 scalars.
 - AI-11: the CBOR test computes expected head sizes without narrowing `u64` to
-  `usize`. A 32-bit Android test compile passes; hosted 32-bit execution remains
-  **not run** because no prebuilt `i686-apple-darwin` standard library or other
-  runnable hosted 32-bit target is available on the review machine.
+  `usize`. Both Android and Linux 32-bit test compiles pass locally, and CI now
+  compiles tests for `i686-unknown-linux-gnu`. Hosted 32-bit execution remains
+  **not run** because no runnable hosted 32-bit target is available locally.
 
 ### Verification
 
-On the follow-up tree, Node reported `PASS 11 suites, 29163 independent
+On the follow-up tree, Node reported `PASS 11 suites, 29169 independent
 assertions`. Each Rust feature mode reported **53 passed and zero failed**,
 including all new regressions. Rust 1.87.0 and 1.94.1 checks passed in both
-modes; `thumbv7em-none-eabi` and `i686-linux-android` compilation passed;
-formatting, `cargo audit` over 71 locked dependencies, all 11 Appendix A hashes,
-workflow YAML parsing, and `git diff --check` passed. The workflow now runs the
-same vector-hash, formatting, and dependency-audit gates.
+modes; `thumbv7em-none-eabi`, `i686-linux-android`, and
+`i686-unknown-linux-gnu` compilation passed. Formatting, `cargo audit` over 71
+locked dependencies, all 11 Appendix A hashes, workflow YAML parsing, and
+`git diff --check` passed. The workflow now runs the same vector-hash,
+formatting, dependency-audit, and hosted 32-bit test-compilation gates.
 
 Next action: commit this exact follow-up with the review evidence, ask Claude
 and Codex to re-review it against AI-01 through AI-11, then deliver the reviewed

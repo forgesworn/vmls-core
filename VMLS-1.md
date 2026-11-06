@@ -119,9 +119,11 @@ used by the envelope vector before conversion to `ErrorCode`.
 
 Validation and error precedence is observable. A decoder MUST validate the map
 and profile, then the exact mailbox head and mailbox equality, then the
-ciphertext head and length, and finally trailing data. The profile is read as a
-raw byte: another value up to 23 is `UnsupportedVersion`; 24 or above is
-`NonCanonical`. The mailbox head MUST be exactly `58 20`; any other head is
+ciphertext head and length, and finally trailing data. The map head and keys
+MUST be compared literally as the exact bytes `a3`, `01`, `02`, and `03` in
+their respective positions; a different or extended head is `NonCanonical` even
+when its argument is truncated. The profile is read as a raw byte: another value
+up to 23 is `UnsupportedVersion`; 24 or above is `NonCanonical`. The mailbox head MUST be exactly `58 20`; any other head is
 `NonCanonical`, as an explicit exception to the usual fixed-field `Malformed`
 rule. Mailbox equality is checked before any ciphertext field is read.
 Ciphertext length heads wider than `5a` (four length bytes) are `NonCanonical`.
@@ -319,9 +321,10 @@ ids named by verified kind-5 tombstones.
 
 Verification order is observable through the stable error result: carrying-leaf
 match, binding signature, person credential rules, device equality, then the
-binding lifetime rules. Within the person credential rules, the `d` tag is
-evaluated before `scope`; expiration is checked before `created_at` skew,
-followed by both lifetime ceilings and then revocation.
+binding lifetime rules. Within the person credential rules, the `d` duplicate
+check runs first, then the `scope` duplicate check, and only then are both values
+compared. Expiration is checked before `created_at` skew, followed by both
+lifetime ceilings and then revocation.
 
 ## 7. `capability/1`
 
@@ -446,9 +449,11 @@ an observation. Two receipts are a candidate equivocation only when:
 - their 36-byte `attempt:u32be || envelope_hash` pair keys are distinct and in
   strictly ascending lexicographic order.
 
-Attempts may differ; hashes may be equal when attempts differ. Layout and pair
-rules are checked before any receipt signature; every receipt MUST then strictly
-verify against the pinned home-box node in encoded order. Thus a non-pair is
+A decoder first requires the 10-byte header, then checks the version, then the
+count and exact total length. Attempts may differ; hashes may be equal when
+attempts differ. Layout and pair rules are checked before any receipt signature;
+every receipt MUST then strictly verify against the pinned home-box node in
+encoded order. Thus a non-pair is
 `EvidenceNotEquivocation` even when a receipt signature is also invalid.
 `pre_epoch` is not covered by the receipt signatures. The MLS/application engine
 MUST associate the evidence with the correct session and transition before
@@ -598,13 +603,13 @@ production.
 
 | File | Contents | SHA-256 |
 |---|---|---|
-| `vmls-core/vectors/vmls-envelope-v1.json` | 14 envelope cases | `07e519984ea0cc88399471bc173c12a27c3cdfe21930eb81d11b781d78c43bd1` |
+| `vmls-core/vectors/vmls-envelope-v1.json` | 16 envelope cases | `6bf9d5e9e466dc3bd7f2fb07922ab14c291fdd1bef3dbd5438bf30c65b40769b` |
 | `vmls-core/vectors/vmls-record-v1.json` | derivations, keys, and 21 record cases | `29baa766796a853ef4d8eeb0b5803f8530e663150bcb3e3d181e669105c8d7a7` |
 | `vmls-core/vectors/vmls-binding-v1.json` | 43 binding cases | `58324190ddce444003f50cedc212e23f272e6bb9c9b3cfd2e3ef58de5018dc4f` |
 | `vmls-core/vectors/vmls-capability-v1.json` | 17 capability cases | `8bae8df6c0005e9daff2263561a5e4ac859e1a87a92af0792ff27cb5da3142ab` |
 | `vectors/device-credential.json` | 8 device-credential cases plus tombstone | `6db2ac7d9ba680dcc952028974bbe00ed6e69f9fe4054ea1ed12277c687f0f7e` |
 | `vmls-core/vectors/vmls-lane-v1.json` | all 48 lane inputs | `05ea8fb2a5090a677bbf0822e4448e8935616c735835b4a97738698286af131f` |
-| `vmls-core/vectors/vmls-security-design-v1.json` | receipts, evidence and precedence, fork derivations | `609fab73d1968b9a6c3ee590f3ffc3d1f9a7ab1a594e5737d66184c21e998e17` |
+| `vmls-core/vectors/vmls-security-design-v1.json` | receipts, evidence and precedence, fork derivations | `5899b9264115942bbcf82c6e88f2e7ba6ff834f5b6647dbf37da6b7a19f2645c` |
 | `vmls-core/vectors/vmls-witness-request-v1.json` | 13 witness-request cases | `75be62ea1ff27f6d503817d06dafe951da67fe50b21c2909844545d7d8eafb1f` |
 | `vmls-core/vectors/vmls-manifest-v1.json` | 12 manifest cases | `c969886c2d48ab51dd1ceb78d00462a49a9a2e31b6fc1ff96ed275efec5e0f57` |
 | `vmls-core/vectors/signer-allocation-witness-v1.json` | independently signed read and advance envelopes | `9cd6d7e48032bbece0b15a03b388a68bbe24217073dd38fd9fd614519d073d04` |

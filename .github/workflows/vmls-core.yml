@@ -63,3 +63,7 @@ jobs:
         run: |
           rustup target add thumbv7em-none-eabi
           cargo check --manifest-path vmls-core/Cargo.toml --no-default-features --target thumbv7em-none-eabi --lib --locked
+      - name: Compile tests for a hosted 32-bit target
+        run: |
+          rustup target add i686-unknown-linux-gnu
+          cargo check --manifest-path vmls-core/Cargo.toml --tests --target i686-unknown-linux-gnu --locked
