@@ -2,7 +2,9 @@
 
 Status: **prepared locally; independent review and downstream acceptance pending**
 
-Source baseline: `53fa9a48ac745895eb61aa6f25679bb92c593f57` (`vmls-core` 0.1.0)
+Original source baseline: `53fa9a48ac745895eb61aa6f25679bb92c593f57`
+(`vmls-core` 0.1.0). Current review source is the containing Git commit; later
+review records identify their exact candidates separately.
 
 Contract: [VMLS-1.md](VMLS-1.md)
 
@@ -82,7 +84,7 @@ cargo check --manifest-path vmls-core/Cargo.toml \
   --no-default-features --target thumbv7em-none-eabi --lib --locked
 ```
 
-Expected result: every command succeeds; each test mode reports 48 passed and
+Expected result: every command succeeds; each test mode reports 53 passed and
 zero failed. A target compile is only a compile gate, not device acceptance.
 
 Verify every vector hash against appendix A of the contract before comparing
@@ -117,13 +119,17 @@ node --check vectors/verify-vmls.mjs
 node vectors/verify-vmls.mjs
 ```
 
-The expected final line is `PASS 11 suites, 29130 independent assertions`.
+The expected final line is `PASS 11 suites, 29169 independent assertions`.
 The reader uses `node:crypto`, a separate canonical CBOR reader, and test-only
 BigInt secp256k1 arithmetic. It recomputes signatures, derivations, ECDH,
 sealed bytes, manifests and all hostile outcomes without calling Rust. Its
-arithmetic is not constant-time and is restricted to the public fixtures. This
-is reproducible implementation evidence, not named reviewer approval or an
-independent security audit.
+arithmetic is not constant-time and is restricted to the public fixtures. The
+Node suite does not duplicate the Rust strict-Ed25519 weak/small-order and
+noncanonical-form negative tests; `node:crypto` is not claimed to be an
+independent strict verifier for those forms. Manifest JSON integers are parsed
+losslessly across the full signed 64-bit range. This is reproducible
+implementation evidence, not named reviewer approval or an independent security
+audit.
 
 For every valid case:
 
@@ -426,3 +432,91 @@ containing this patch, confirm MRR-01's resolution, and record findings against
 sections 4 through 7. Downstream implementations can then execute the matrix in
 section 5; the product owner must supply device budgets before section 6 can be
 accepted.
+
+## 9. Independent AI review follow-up
+
+Status: **implementation and local verification complete; AI re-review pending**
+
+The original review target was `323b536a775a9e2a92dae979f92ae6435846dc10`.
+Claude Fable 5.1 and OpenAI Codex independently reviewed that commit without
+editing source. Their raw reports and the consolidated findings are in
+`reviews/vmls1-323b536-claude.md`, `reviews/vmls1-323b536-codex.md`, and
+`reviews/vmls1-323b536-ai-review.md`. Claude recommended approve with findings;
+Codex recommended do not approve before repairs. Both accepted MRR-01 only with
+conditions. These are independent AI reviews, not human security approval.
+
+The follow-up addresses every consolidated finding:
+
+- AI-01: `ForkEvidence::verify` now rechecks pair invariants before signatures;
+  duplicate, reversed, different-installation, and different-slot constructed
+  pairs have regression tests.
+- AI-02/AI-03: contract §§3, 6.1, and 10 pin error order; the Node reader
+  implements the documented Rust order. Envelope, correctly signed binding, and
+  evidence combined-failure vectors cover the identified divergences.
+- AI-04: contract §11 explicitly permits any valid UTF-8 in manifest text and
+  namespaces, with control-character known-answer coverage.
+- AI-05: manifest JSON integers are parsed losslessly through conversion to
+  BigInt; both `i64` endpoints and values immediately outside JavaScript's safe
+  range have known-answer coverage.
+- AI-06: all identified signing helpers document prevalidation, contract §2.1
+  includes `DeviceCredential` and `ForkEvidence` and invalidation after mutation,
+  and all four original MRR-01 types have negative structural round-trip tests.
+- AI-07: contract §4.2 and `record::seal` explain why different padded
+  plaintexts must never share a record id under one record secret.
+- AI-08: contract and audit headers distinguish the original 0.1.0 baseline from
+  the current normative revision in the containing commit.
+- AI-09: CI now checks every Appendix A vector hash, formatting, dependency
+  audit, and hosted 32-bit test compilation in addition to the existing reader,
+  test, toolchain, and target gates.
+- AI-10: section 3 explicitly limits the Node reader's strict-signature negative
+  evidence; the reader also rejects zero BIP-340 scalars.
+- AI-11: the CBOR test computes expected head sizes without narrowing `u64` to
+  `usize`. Both Android and Linux 32-bit test compiles pass locally, and CI now
+  compiles tests for `i686-unknown-linux-gnu`. Hosted 32-bit execution remains
+  **not run** because no runnable hosted 32-bit target is available locally.
+
+### Verification
+
+On the follow-up tree, Node reported `PASS 11 suites, 29169 independent
+assertions`. Each Rust feature mode reported **53 passed and zero failed**,
+including all new regressions. Rust 1.87.0 and 1.94.1 checks passed in both
+modes; `thumbv7em-none-eabi`, `i686-linux-android`, and
+`i686-unknown-linux-gnu` compilation passed. Formatting, `cargo audit` over 71
+locked dependencies, all 11 Appendix A hashes, workflow YAML parsing, and
+`git diff --check` passed. The workflow now runs the same vector-hash,
+formatting, dependency-audit, and hosted 32-bit test-compilation gates.
+
+Next action: commit this exact follow-up with the review evidence, ask Claude
+and Codex to re-review it against AI-01 through AI-11, then deliver the reviewed
+change. Human review on issue #7, downstream interoperability, independent
+regeneration, physical-device acceptance, fuzzing, side-channel assessment,
+formal proof, hosted 32-bit test execution, and production approval remain
+separate gates.
+
+## 10. Final independent AI compatibility review
+
+Status: **Claude and Codex independently approve the contract/vector
+compatibility gate at `2d08414`; MRR-01 closed**
+
+Approved implementation: `2d0841442194a939e0e946f199b3a00bbcc73916`.
+Their final reports are `reviews/vmls1-2d08414-claude.md` and
+`reviews/vmls1-2d08414-codex.md`; the consolidated approval is
+`reviews/vmls1-2d08414-ai-review.md`. Both found AI-01 through AI-11 resolved,
+all seven residual first-re-review conditions closed, and no confirmed new
+finding. Codex independently recomputed all 11 vector hashes and ran the Node
+reader, obtaining `PASS 11 suites, 29169 independent assertions`. Both accepted
+caller prevalidation as sufficient to close MRR-01. These are independent AI
+reviews, not human security approval or production readiness.
+
+[PR CI run 42209686581](https://github.com/forgesworn/vmls-core/actions/runs/42209686581)
+passed every step at the approved commit: all 11 vector hashes, formatting,
+dependency audit, Node reader, both Rust feature modes, Rust 1.87.0 and 1.94.1,
+`thumbv7em-none-eabi`, and `i686-unknown-linux-gnu` test compilation. Local
+Android 32-bit compilation also passed. Hosted 32-bit execution remains not run.
+
+The final review-report delivery commit is documentation-only and does not alter
+the approved implementation. Issue #7 remains open for named human review.
+Independent regeneration, downstream interoperability, physical-device
+acceptance, fuzzing, side-channel assessment, formal proof, hosted 32-bit
+execution, a private security-reporting route, and production approval remain
+separate gates.

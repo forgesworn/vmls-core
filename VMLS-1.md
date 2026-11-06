@@ -1,8 +1,11 @@
 # VMLS/1 transport contract
 
-Status: **source-derived draft for review**, 2026-11-05
+Status: **source-derived draft for review**, revised 2026-11-06
 
-Baseline: `vmls-core` 0.1.0, commit `53fa9a48ac745895eb61aa6f25679bb92c593f57`
+Original baseline: `vmls-core` 0.1.0, commit
+`53fa9a48ac745895eb61aa6f25679bb92c593f57`.
+Current normative revision: the containing Git commit; the original baseline is
+retained for provenance and is not claimed to contain every rule below.
 
 This document specifies the formats and decisions implemented by the baseline
 crate. It does not implement MLS, establish independent security assurance, or
@@ -60,14 +63,21 @@ CBOR structures use the deterministic RFC 8949 subset implemented in
 An accepted CBOR object MUST re-encode to exactly its accepted bytes.
 
 Typed construction is not proof of conformance. The typed encoders for
-`LeafBinding`, `CapabilityRecord`, `AdvanceRequest`, and `WitnessReceipt` are
-not general validation APIs. Before signing or emitting a caller-constructed
-value, the caller MUST enforce every applicable bound in sections 6 through 9,
-including nested credential tag/text limits, timestamp ranges, and the witness
-sequence limit. A successful decode of the emitted bytes provides structural
-prevalidation; it does not replace signature verification or the adapter and
-service checks in section 15. `ForwardedRequest::new` performs this structural
-round-trip check for its request body.
+`DeviceCredential`, `LeafBinding`, `CapabilityRecord`, `AdvanceRequest`,
+`WitnessReceipt`, and `ForkEvidence` are not general validation APIs. Before
+signing or emitting a caller-constructed value, the caller MUST enforce every
+applicable bound in sections 6 through 10, including nested credential tag/text
+limits, timestamp ranges, witness sequence limits, and evidence pair invariants.
+A successful decode of the emitted bytes provides structural prevalidation; it
+does not replace signature verification or the adapter and service checks in
+section 15. `ForwardedRequest::new` performs this structural round-trip check
+for its request body.
+
+For example, a caller can validate a constructed binding with
+`LeafBinding::decode(&binding.encode())` and sign the checked result. Any later
+structural mutation invalidates that validation and requires a fresh round-trip
+before signing or emission. Placeholder signatures may be used for this
+structural check; semantic verification is still separate.
 
 ### 2.2 Primitive profiles
 
@@ -106,6 +116,18 @@ non-canonical input to `NonCanonical`, another short-form profile to
 `Empty`, and excess ciphertext to `TooLarge`. The envelope API names the last
 two variants `EmptyCiphertext` and `CiphertextTooLarge`; those are the strings
 used by the envelope vector before conversion to `ErrorCode`.
+
+Validation and error precedence is observable. A decoder MUST validate the map
+and profile, then the exact mailbox head and mailbox equality, then the
+ciphertext head and length, and finally trailing data. The map head and keys
+MUST be compared literally as the exact bytes `a3`, `01`, `02`, and `03` in
+their respective positions; a different or extended head is `NonCanonical` even
+when its argument is truncated. The profile is read as a raw byte: another value
+up to 23 is `UnsupportedVersion`; 24 or above is `NonCanonical`. The mailbox head MUST be exactly `58 20`; any other head is
+`NonCanonical`, as an explicit exception to the usual fixed-field `Malformed`
+rule. Mailbox equality is checked before any ciphertext field is read.
+Ciphertext length heads wider than `5a` (four length bytes) are `NonCanonical`.
+Empty and excess length checks precede remaining-input and trailing-data checks.
 
 ## 4. Exporter and secret derivations
 
@@ -157,7 +179,11 @@ key       = okm[0..16]
 nonce     = okm[16..28]
 ```
 
-The sender draws `record_id` from a platform CSPRNG.
+The sender draws `record_id` from a platform CSPRNG. Because both the key and
+nonce are derived from `record_secret` and `record_id`, an id MUST NOT seal two
+different padded plaintexts under one record secret. Reusing the key/nonce pair
+would expose the plaintext XOR and undermine GCM authentication. A retry MUST
+resend the exact stored sealed bytes.
 
 ### 4.3 Pairwise introduction
 
@@ -295,7 +321,10 @@ ids named by verified kind-5 tombstones.
 
 Verification order is observable through the stable error result: carrying-leaf
 match, binding signature, person credential rules, device equality, then the
-binding lifetime rules.
+binding lifetime rules. Within the person credential rules, the `d` duplicate
+check runs first, then the `scope` duplicate check, and only then are both values
+compared. Expiration is checked before `created_at` skew, followed by both
+lifetime ceilings and then revocation.
 
 ## 7. `capability/1`
 
@@ -420,10 +449,15 @@ an observation. Two receipts are a candidate equivocation only when:
 - their 36-byte `attempt:u32be || envelope_hash` pair keys are distinct and in
   strictly ascending lexicographic order.
 
-Attempts may differ; hashes may be equal when attempts differ. Every receipt
-MUST strictly verify against the pinned home-box node. `pre_epoch` is not
-covered by the receipt signatures. The MLS/application engine MUST associate
-the evidence with the correct session and transition before acting on it.
+A decoder first requires the 10-byte header, then checks the version, then the
+count and exact total length. Attempts may differ; hashes may be equal when
+attempts differ. Layout and pair rules are checked before any receipt signature;
+every receipt MUST then strictly verify against the pinned home-box node in
+encoded order. Thus a non-pair is
+`EvidenceNotEquivocation` even when a receipt signature is also invalid.
+`pre_epoch` is not covered by the receipt signatures. The MLS/application engine
+MUST associate the evidence with the correct session and transition before
+acting on it.
 
 ## 11. Canonical state manifest
 
@@ -445,6 +479,10 @@ Entries are sorted by raw key bytes, lexicographically. Duplicate keys are
 rejected. Manifest values preserve their types: null, signed 64-bit integer,
 byte string, text string, or nested array. Nonnegative integers use CBOR major
 type 0; negative integers use major type 1 with argument `-1 - value`.
+Manifest namespaces and text values permit any valid UTF-8, including control
+characters, as an explicit exception to the §2.1 control-byte restriction.
+Readers of JSON vectors MUST preserve the full signed 64-bit range exactly and
+MUST NOT pass these integers through a floating-point representation.
 
 The adapter's frozen schema manifest determines covered tables, columns, and
 primary-key order. Its hash is bound into every state manifest. An adapter
@@ -557,23 +595,23 @@ A successful codec call does not by itself establish:
 These checks belong at the named integration boundaries and are required for
 end-to-end assurance.
 
-## Appendix A. Baseline compatibility vectors
+## Appendix A. Compatibility vectors
 
-Hashes are SHA-256 of the exact JSON file bytes at the baseline commit. Test
+Hashes are SHA-256 of the exact JSON file bytes at the containing commit. Test
 keys and secrets in these files are public fixtures and MUST NOT be used in
 production.
 
 | File | Contents | SHA-256 |
 |---|---|---|
-| `vmls-core/vectors/vmls-envelope-v1.json` | 9 envelope cases | `9738f1c6fadf0fc3078dbab79f2a455c69cefe0a97094a915565f60b90c09201` |
+| `vmls-core/vectors/vmls-envelope-v1.json` | 16 envelope cases | `6bf9d5e9e466dc3bd7f2fb07922ab14c291fdd1bef3dbd5438bf30c65b40769b` |
 | `vmls-core/vectors/vmls-record-v1.json` | derivations, keys, and 21 record cases | `29baa766796a853ef4d8eeb0b5803f8530e663150bcb3e3d181e669105c8d7a7` |
-| `vmls-core/vectors/vmls-binding-v1.json` | 41 binding cases | `dacefc79f29b1096a48bdc6675fc19380256e82605826ef1af44d65b436e3133` |
+| `vmls-core/vectors/vmls-binding-v1.json` | 43 binding cases | `58324190ddce444003f50cedc212e23f272e6bb9c9b3cfd2e3ef58de5018dc4f` |
 | `vmls-core/vectors/vmls-capability-v1.json` | 17 capability cases | `8bae8df6c0005e9daff2263561a5e4ac859e1a87a92af0792ff27cb5da3142ab` |
 | `vectors/device-credential.json` | 8 device-credential cases plus tombstone | `6db2ac7d9ba680dcc952028974bbe00ed6e69f9fe4054ea1ed12277c687f0f7e` |
 | `vmls-core/vectors/vmls-lane-v1.json` | all 48 lane inputs | `05ea8fb2a5090a677bbf0822e4448e8935616c735835b4a97738698286af131f` |
-| `vmls-core/vectors/vmls-security-design-v1.json` | slot/witness receipts, evidence, fork derivations | `01e6649a534191f9dcf7face599728a941c66319ef2cffdb96cae70d4c4aadbd` |
+| `vmls-core/vectors/vmls-security-design-v1.json` | receipts, evidence and precedence, fork derivations | `5899b9264115942bbcf82c6e88f2e7ba6ff834f5b6647dbf37da6b7a19f2645c` |
 | `vmls-core/vectors/vmls-witness-request-v1.json` | 13 witness-request cases | `75be62ea1ff27f6d503817d06dafe951da67fe50b21c2909844545d7d8eafb1f` |
-| `vmls-core/vectors/vmls-manifest-v1.json` | 7 manifest cases | `75df7ef2f23e01a61e46084fbd21069227363b9322667966f1cb90a0324f5214` |
+| `vmls-core/vectors/vmls-manifest-v1.json` | 12 manifest cases | `c969886c2d48ab51dd1ceb78d00462a49a9a2e31b6fc1ff96ed275efec5e0f57` |
 | `vmls-core/vectors/signer-allocation-witness-v1.json` | independently signed read and advance envelopes | `9cd6d7e48032bbece0b15a03b388a68bbe24217073dd38fd9fd614519d073d04` |
 | `vmls-core/vectors/vmls-hostile-v1.json` | 7324 binding, 9079 capability, and 12284 plaintext outcomes | `39ec6902a1dd2af388dae2d35ff691015773f00ee23223f33578983fdda8dda9` |
 

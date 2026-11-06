@@ -231,7 +231,8 @@ impl WitnessReceipt {
         out
     }
 
-    /// The digest the witness signs.
+    /// The digest the witness signs. The caller MUST ensure `seq` is at most
+    /// `MAX_SAFE_INTEGER` before signing; `Self::parse` can prevalidate `encode`.
     pub fn digest_to_sign(&self) -> [u8; 32] {
         Sha256::new()
             .chain_update(WITNESS_RECEIPT_TAG)

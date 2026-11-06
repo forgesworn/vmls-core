@@ -36,6 +36,27 @@ struct Design {
     leaf_hex: String,
     fork_mailbox_hex: String,
     fork_record_secret_hex: String,
+    precedence: EvidencePrecedence,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidencePrecedence {
+    cases: Vec<EvidencePrecedenceCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidencePrecedenceCase {
+    name: String,
+    evidence_hex: String,
+    expect: EvidencePrecedenceExpect,
+}
+
+#[derive(Deserialize)]
+struct EvidencePrecedenceExpect {
+    ok: bool,
+    error: Option<String>,
 }
 
 fn design() -> Design {
@@ -571,4 +592,98 @@ fn negative_integers_use_major_type_one() {
         [0x3b, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
     );
     assert_eq!(Value::Int(i64::MAX).encode()[0], 0x1b);
+}
+
+#[test]
+fn directly_constructed_evidence_pairs_are_rechecked() {
+    let d = design();
+    let node = hex32(&d.node_hex);
+    let parsed = ForkEvidence::parse(&hex(&d.evidence_hex)).unwrap();
+    let ForkEvidence::Equivocation { first, second, .. } = parsed else {
+        panic!("expected a pair");
+    };
+    let fixture: serde_json::Value =
+        serde_json::from_str(include_str!("../vectors/vmls-security-design-v1.json")).unwrap();
+    let signing_key =
+        ed25519_dalek::SigningKey::from_bytes(&hex32(fixture["seedHex"].as_str().unwrap()));
+    let mut different_slot = second.clone();
+    different_slot.slot = [0x44; 32];
+    different_slot.signature =
+        ed25519_dalek::Signer::sign(&signing_key, &different_slot.digest()).to_bytes();
+    first.verify(&node).unwrap();
+    different_slot.verify(&node).unwrap();
+
+    for evidence in [
+        ForkEvidence::Equivocation {
+            pre_epoch: 7,
+            first: first.clone(),
+            second: first.clone(),
+        },
+        ForkEvidence::Equivocation {
+            pre_epoch: 7,
+            first: second.clone(),
+            second: first.clone(),
+        },
+        ForkEvidence::Equivocation {
+            pre_epoch: 7,
+            first: first.clone(),
+            second: SlotReceipt::parse(&hex(&d.foreign_slot_receipt_hex)).unwrap(),
+        },
+        ForkEvidence::Equivocation {
+            pre_epoch: 7,
+            first: first.clone(),
+            second: different_slot,
+        },
+    ] {
+        assert_eq!(
+            evidence.verify(&node),
+            Err(ErrorCode::EvidenceNotEquivocation)
+        );
+        assert_eq!(
+            ForkEvidence::parse(&evidence.encode()),
+            Err(ErrorCode::EvidenceNotEquivocation)
+        );
+    }
+}
+
+#[test]
+fn constructed_witness_values_require_structural_prevalidation() {
+    let d = design();
+    let mut receipt = WitnessReceipt::parse(&hex(&d.witness_hex)).unwrap();
+    receipt.seq = vmls_core::MAX_SAFE_INTEGER + 1;
+    assert_eq!(
+        WitnessReceipt::parse(&receipt.encode()),
+        Err(ErrorCode::Malformed)
+    );
+
+    let request = AdvanceRequest {
+        subject: [1; 32],
+        expected_seq: vmls_core::MAX_SAFE_INTEGER,
+        expected_digest: [2; 32],
+        next_digest: [3; 32],
+        challenge: [4; 32],
+    };
+    assert_eq!(
+        AdvanceRequest::parse(&request.encode()),
+        Err(ErrorCode::Malformed)
+    );
+}
+
+#[test]
+fn manifest_text_permits_valid_utf8_controls() {
+    assert_eq!(Value::Text("\0".to_string()).encode(), [0x61, 0x00]);
+    assert_eq!(manifest::entry_key("\0", &[]), [0x81, 0x61, 0x00]);
+}
+
+#[test]
+fn evidence_error_precedence_matches_the_published_cases() {
+    let d = design();
+    let node = hex32(&d.node_hex);
+    for case in d.precedence.cases {
+        assert!(!case.expect.ok, "{}", case.name);
+        let expected = ErrorCode::from_code(case.expect.error.as_deref().unwrap()).unwrap();
+        let result = ForkEvidence::parse(&hex(&case.evidence_hex))
+            .and_then(|evidence| evidence.verify(&node));
+        assert_eq!(result, Err(expected), "{}", case.name);
+    }
 }

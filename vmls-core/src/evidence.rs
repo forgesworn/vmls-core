@@ -84,6 +84,8 @@ impl ForkEvidence {
         }
     }
 
+    /// Encodes the fixed layout. Directly constructed values MUST satisfy the
+    /// same pair invariants as `parse`; `Self::parse` can prevalidate the bytes.
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(TWO_RECEIPT_BYTES);
         out.push(EVIDENCE_VERSION);
@@ -117,6 +119,7 @@ impl ForkEvidence {
         match self {
             Self::Observation { receipt, .. } => receipt.verify(pinned_node),
             Self::Equivocation { first, second, .. } => {
+                check_pair(first, second)?;
                 first.verify(pinned_node)?;
                 second.verify(pinned_node)
             }

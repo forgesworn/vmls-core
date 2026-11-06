@@ -12,6 +12,13 @@
     { "name": "reordered-keys", "encodedHex": "a3025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f01010344deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
     { "name": "noncanonical-ciphertext-length", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f035804deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
     { "name": "empty-ciphertext", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0340", "expect": { "ok": false, "error": "EmptyCiphertext" } },
-    { "name": "trailing-byte", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef00", "expect": { "ok": false, "error": "NonCanonical" } }
+    { "name": "trailing-byte", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef00", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "wrong-mailbox-length", "encodedHex": "a3010102581f000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "wrong-mailbox-trailing-byte", "activeMailboxHex": "ff0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef00", "expect": { "ok": false, "error": "WrongMailbox" } },
+    { "name": "wrong-mailbox-truncated-after-mailbox", "activeMailboxHex": "ff0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", "expect": { "ok": false, "error": "WrongMailbox" } },
+    { "name": "profile-uint8-24", "encodedHex": "a3011818025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f0344deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "ciphertext-length-u64", "encodedHex": "a30101025820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f035b0000000000000000deadbeef", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "indefinite-map", "encodedHex": "b8", "expect": { "ok": false, "error": "NonCanonical" } },
+    { "name": "extended-key-without-argument", "encodedHex": "a318", "expect": { "ok": false, "error": "NonCanonical" } }
   ]
 }

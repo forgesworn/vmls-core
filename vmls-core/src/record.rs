@@ -223,6 +223,11 @@ pub fn decode_plaintext(padded: &[u8]) -> Result<InnerRecord, ErrorCode> {
 }
 
 /// Seals `record` for the holder of `record_secret` at `mailbox`.
+///
+/// Both the AES-GCM key and nonce are derived from `record_secret` and
+/// `record_id`. A caller MUST NOT seal two different padded plaintexts under
+/// one id: that would expose their XOR and undermine GCM authentication.
+/// Retry with the exact stored sealed bytes instead.
 pub fn seal(
     aead: &impl RecordAead,
     record_secret: &[u8; 32],

@@ -234,7 +234,14 @@ mod tests {
         for value in [0u64, 23, 24, 255, 256, 65_535, 65_536, u32::MAX as u64 + 1] {
             let mut out = Vec::new();
             write_uint(&mut out, value);
-            assert_eq!(out.len(), bytes_head_len(value as usize));
+            let expected = match value {
+                0..=23 => 1,
+                24..=0xff => 2,
+                0x100..=0xffff => 3,
+                0x1_0000..=0xffff_ffff => 5,
+                _ => 9,
+            };
+            assert_eq!(out.len(), expected);
             assert_eq!(Reader::new(&out).uint(), Ok(value));
         }
         assert_eq!(

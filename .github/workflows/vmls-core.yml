@@ -18,6 +18,29 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
+      - name: Contract vector hashes
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import re
+          from pathlib import Path
+
+          contract = Path('VMLS-1.md').read_text()
+          expected = dict(re.findall(r'\| `([^`]+\.json)` \|[^|]*\| `([0-9a-f]{64})` \|', contract))
+          if len(expected) != 11:
+              raise SystemExit(f'expected 11 contract vector rows, found {len(expected)}')
+          for name, digest in sorted(expected.items()):
+              actual = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              if actual != digest:
+                  raise SystemExit(f'{name}: expected {digest}, got {actual}')
+              print(f'{actual}  {name}')
+          PY
+      - name: Formatting
+        run: cargo fmt --manifest-path vmls-core/Cargo.toml --check
+      - name: Dependency audit
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit --file vmls-core/Cargo.lock
       - name: Independent Node vector reader
         run: |
           node --check vectors/verify-vmls.mjs
@@ -40,3 +63,7 @@ jobs:
         run: |
           rustup target add thumbv7em-none-eabi
           cargo check --manifest-path vmls-core/Cargo.toml --no-default-features --target thumbv7em-none-eabi --lib --locked
+      - name: Compile tests for a hosted 32-bit target
+        run: |
+          rustup target add i686-unknown-linux-gnu
+          cargo check --manifest-path vmls-core/Cargo.toml --tests --target i686-unknown-linux-gnu --locked
