@@ -45,6 +45,10 @@ jobs:
         run: |
           node --check vectors/verify-vmls.mjs
           node vectors/verify-vmls.mjs
+      - name: Independent vector regeneration
+        run: |
+          node --check vectors/generate-vmls.mjs
+          node vectors/generate-vmls.mjs
       - name: Canonical VMLS envelope codec
         run: cargo test --manifest-path vmls-core/Cargo.toml --locked
       - name: Declared Rust 1.87 floor in both modes

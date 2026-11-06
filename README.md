@@ -45,3 +45,11 @@ node vectors/verify-vmls.mjs
 
 Its secp256k1 arithmetic is test-only, is not constant-time, and handles only
 the public fixtures.
+
+Regenerate all 11 vector files with the same dependency-free primitive stack,
+require their content and exact bytes to match, and run the negative control:
+
+```sh
+node --check vectors/generate-vmls.mjs
+node vectors/generate-vmls.mjs
+```

@@ -51,9 +51,8 @@ source revision. Re-run the relevant checks on the exact review candidate.
 - The VMLS/1 contract is a new source-derived draft and has not been
   independently approved.
 - Test comments identify `vectors/generate-vmls.mjs` as the independent
-  producer, but that generator is not included in this source repository.
-  Independent reading is now reproducible; independent regeneration remains
-  open.
+  producer. That generator is included and regenerates every expected object and
+  outcome for all 11 files, with a negative control.
 - No independent security audit, coverage-guided fuzzing result, formal proof,
   or side-channel assessment is asserted.
 - No downstream interoperability or physical-device result is asserted.
@@ -130,6 +129,22 @@ independent strict verifier for those forms. Manifest JSON integers are parsed
 losslessly across the full signed 64-bit range. This is reproducible
 implementation evidence, not named reviewer approval or an independent security
 audit.
+
+Regenerate every expected object and outcome with the same dependency-free
+primitive stack and require exact source bytes to remain compatible:
+
+```sh
+node --check vectors/generate-vmls.mjs
+node vectors/generate-vmls.mjs
+```
+
+The expected final line is `PASS 11 vector files regenerated; content and exact
+bytes match; negative control passed`. The generator recomputes all expected
+fields and error outcomes from the fixture inputs, including deterministic
+signatures and every hostile code. It never calls Rust or copies expected fields
+without recomputation. The negative control changes an input and requires the
+regenerated outcome to differ. Importing the reader as a library does not run
+the suites.
 
 For every valid case:
 
@@ -297,8 +312,8 @@ this repository, so the product owner must supply acceptance thresholds.
 Before removing pre-release status or claiming production readiness:
 
 - [ ] The contract and vector compatibility policy have named reviewer approval.
-- [x] Independent vector reading is reproducible and all published cases pass
-      (§3); independent regeneration remains open.
+- [x] Independent vector reading and regeneration are reproducible and all
+      published cases pass (§3).
 - [ ] Security findings have severity, resolution, and regression evidence.
 - [ ] Each required downstream implementation has completed the matrix.
 - [ ] Physical-device results meet explicitly supplied budgets.
@@ -515,8 +530,44 @@ dependency audit, Node reader, both Rust feature modes, Rust 1.87.0 and 1.94.1,
 Android 32-bit compilation also passed. Hosted 32-bit execution remains not run.
 
 The final review-report delivery commit is documentation-only and does not alter
-the approved implementation. Issue #7 remains open for named human review.
-Independent regeneration, downstream interoperability, physical-device
-acceptance, fuzzing, side-channel assessment, formal proof, hosted 32-bit
-execution, a private security-reporting route, and production approval remain
-separate gates.
+the approved implementation. Independent regeneration is now reproducible (§3).
+Issue #7 remains open for named human review. Downstream interoperability,
+physical-device acceptance, fuzzing, side-channel assessment, formal proof,
+hosted 32-bit execution, a private security-reporting route, and production
+approval remain separate gates.
+
+## 11. Independent vector regeneration
+
+Status: **implemented and locally verified; independent AI review pending**
+
+`vectors/generate-vmls.mjs` is now included and uses only Node.js built-ins and
+the independent reader's primitive stack, never Rust. It recomputes all expected
+fields and error outcomes for every published fixture family: envelope, binding,
+capability, derivations/records, lanes, device credentials, security design,
+witness requests, manifests, allocation forwarding, and the hostile corpus.
+Deterministic receipt, evidence, witness, and allocation signatures are
+recomputed from public fixture seeds.
+
+Run from the repository root with Node.js 20 or later:
+
+```sh
+node --check vectors/generate-vmls.mjs
+node vectors/generate-vmls.mjs
+```
+
+Expected result: `PASS 11 vector files regenerated; content and exact bytes
+match; negative control passed`. The generator requires deep semantic equality
+and exact source-byte compatibility for all 11 files. Its negative control
+changes a canonical envelope into a trailing-byte case and requires a different
+`NonCanonical` outcome. Importing `verify-vmls.mjs` as a library does not execute
+the suites; direct execution still reports `PASS 11 suites, 29169 independent
+assertions`.
+
+CI runs the reader and the generator. Local verification also passed 53 Rust
+tests in each feature mode, both Rust toolchains, `thumbv7em-none-eabi`, Android
+and Linux 32-bit test compilation, formatting, dependency audit, all Appendix A
+hashes, workflow YAML parsing, and `git diff --check`.
+
+Next action: obtain independent AI review of the generator and its evidence,
+then deliver the tooling. Downstream interoperability, physical-device
+acceptance, hosted 32-bit execution, and the other external gates remain open.

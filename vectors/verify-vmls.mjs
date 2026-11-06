@@ -11,7 +11,7 @@ import {
   verify as edVerify,
 } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
 const defaultRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -797,6 +797,56 @@ function envelopeCiphertext(reader) {
   return reader.take(length);
 }
 
+class Lcg {
+  constructor(seed) {
+    this.state = seed >>> 0;
+  }
+
+  byte() {
+    this.state = (Math.imul(this.state, 1664525) + 1013904223) >>> 0;
+    return this.state >>> 24;
+  }
+
+  bytes(length) {
+    const out = Buffer.alloc(length);
+    for (let i = 0; i < length; i += 1) out[i] = this.byte();
+    return out;
+  }
+}
+
+function hostileInputs(file) {
+  const base = hex(file.baseHex);
+  const head = hex(file.randomHeadHex);
+  const out = [];
+  for (let length = 0; length < base.length; length += 1) out.push(base.subarray(0, length));
+  for (let bit = 0; bit < base.length * 8; bit += 1) {
+    const changed = Buffer.from(base);
+    changed[Math.floor(bit / 8)] ^= 1 << (bit % 8);
+    out.push(changed);
+  }
+  const lcg = new Lcg(file.seed);
+  for (let i = 0; i < file.splices; i += 1) {
+    const cut = Math.floor(lcg.byte() * base.length / 256);
+    const resume = Math.floor(lcg.byte() * base.length / 256);
+    out.push(concat(base.subarray(0, cut), base.subarray(resume)));
+  }
+  for (let i = 0; i < file.randoms; i += 1) {
+    let input;
+    if (file.randomLength === "base") {
+      input = Buffer.alloc(base.length);
+      const random = lcg.bytes(1 + i % 24);
+      random.copy(input);
+    } else {
+      const length = ((lcg.byte() << 8) | lcg.byte()) % file.randomLength;
+      input = lcg.bytes(length);
+    }
+    if (i % 2 === 0 && input.length >= head.length) head.copy(input);
+    out.push(input);
+  }
+  return out;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
 suite("envelope", () => {
   const file = json("vmls-core/vectors/vmls-envelope-v1.json");
   for (const test of file.cases) {
@@ -1058,55 +1108,6 @@ suite("allocation witness forwarding", () => {
   verifyAllocation(file, "advance", 2);
 });
 
-class Lcg {
-  constructor(seed) {
-    this.state = seed >>> 0;
-  }
-
-  byte() {
-    this.state = (Math.imul(this.state, 1664525) + 1013904223) >>> 0;
-    return this.state >>> 24;
-  }
-
-  bytes(length) {
-    const out = Buffer.alloc(length);
-    for (let i = 0; i < length; i += 1) out[i] = this.byte();
-    return out;
-  }
-}
-
-function hostileInputs(file) {
-  const base = hex(file.baseHex);
-  const head = hex(file.randomHeadHex);
-  const out = [];
-  for (let length = 0; length < base.length; length += 1) out.push(base.subarray(0, length));
-  for (let bit = 0; bit < base.length * 8; bit += 1) {
-    const changed = Buffer.from(base);
-    changed[Math.floor(bit / 8)] ^= 1 << (bit % 8);
-    out.push(changed);
-  }
-  const lcg = new Lcg(file.seed);
-  for (let i = 0; i < file.splices; i += 1) {
-    const cut = Math.floor(lcg.byte() * base.length / 256);
-    const resume = Math.floor(lcg.byte() * base.length / 256);
-    out.push(concat(base.subarray(0, cut), base.subarray(resume)));
-  }
-  for (let i = 0; i < file.randoms; i += 1) {
-    let input;
-    if (file.randomLength === "base") {
-      input = Buffer.alloc(base.length);
-      const random = lcg.bytes(1 + i % 24);
-      random.copy(input);
-    } else {
-      const length = ((lcg.byte() << 8) | lcg.byte()) % file.randomLength;
-      input = lcg.bytes(length);
-    }
-    if (i % 2 === 0 && input.length >= head.length) head.copy(input);
-    out.push(input);
-  }
-  return out;
-}
-
 suite("hostile corpus", () => {
   const file = json("vmls-core/vectors/vmls-hostile-v1.json");
   const leaf = { identity: hex(file.leaf.identityHex), signatureKey: hex(file.leaf.signatureKeyHex) };
@@ -1128,3 +1129,40 @@ suite("hostile corpus", () => {
 });
 
 console.log(`PASS ${suites} suites, ${assertions} independent assertions`);
+}
+
+export {
+  ERROR_NUMBERS,
+  Reader,
+  concat,
+  credentialId,
+  decodePlaintext,
+  decodeSlotReceipt,
+  ecdhX,
+  fail,
+  edPrivateKey,
+  edPublicFromSeed,
+  edSign,
+  encodeTyped,
+  encodeWitnessRequest,
+  envelopeCiphertext,
+  hex,
+  hkdfExpand,
+  hkdfExtract,
+  hostileInputs,
+  json,
+  jsonExactInts,
+  manifestFor,
+  openRecord,
+  outcome,
+  parseCapability,
+  parseSlotReceipt,
+  parseWitnessRequest,
+  recordKeyNonce,
+  sealRecord,
+  sha256,
+  verifyBinding,
+  verifyCapability,
+  verifyEvidence,
+  verifyPersonCredential,
+};
