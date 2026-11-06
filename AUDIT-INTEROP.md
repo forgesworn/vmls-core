@@ -255,11 +255,15 @@ turn a compile or unit-test pass into an end-to-end pass.
 | Implementation | Unit/vector suite | Cross-implementation exchange | Failure/replay cases | Evidence |
 |---|---|---|---|---|
 | Rust reference | baseline pass; rerun on candidate | not applicable | baseline hostile suite | local/CI logs |
-| Heartwood | pending | pending | pending | reviewer to supply |
+| Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
 | Browser | pending | pending | pending | reviewer to supply |
 | Android | pending | pending | pending | reviewer to supply |
 | Box service | pending | pending | pending | reviewer to supply |
 | Firmware/allocation service | pending | pending | pending | reviewer to supply |
+
+Heartwood's pass cells are not end-to-end acceptance. Scenarios 1–5, 8 and 9
+remain **not run** there; scenarios 6 and 7 have host-fixture coverage only.
+No public-network, deployment or physical-device behaviour is claimed.
 
 ### End-to-end scenarios
 
@@ -538,14 +542,14 @@ approval remain separate gates.
 
 ## 11. Independent vector regeneration
 
-Status: **independent AI compatibility review complete; delivery pending**
+Status: **complete; merged at `1c0adec`**
 
-Final reports: `reviews/vmls1-41aa9db-claude.md`,
-`reviews/vmls1-41aa9db-codex.md`, and `reviews/vmls1-41aa9db-ai-review.md`.
-Claude recommended approve with findings; Codex recommended approve. Both found
-all correction classes resolved and no remaining compatibility defect. The final
+Final reports: `reviews/vmls1-52a8e5d-claude.md`,
+`reviews/vmls1-52a8e5d-codex.md`, and `reviews/vmls1-52a8e5d-ai-review.md`.
+Claude and Codex both recommend approve with no confirmed issues. The final
 record also restores the historical 29,169 counts in sections 9 and 10 and adds
-the tombstone consistency assertion.
+the tombstone consistency assertion. Delivery CI 42228895288 passed at
+`45190c7`; post-merge CI 42230089240 passed at `1c0adec`.
 
 `vectors/generate-vmls.mjs` is included and uses only Node.js built-ins and the
 independent reader's primitive stack, never Rust. It recomputes all expected
@@ -590,6 +594,46 @@ also passed 53 Rust tests in each feature mode, both Rust toolchains,
 dependency audit, all Appendix A hashes, workflow YAML parsing, and
 `git diff --check`.
 
-Next action: deliver the reviewed tooling and run post-merge CI. Downstream
-interoperability, physical-device acceptance, hosted 32-bit execution, and the
-other external gates remain open.
+Next action: continue downstream interoperability (§12). Physical-device
+acceptance, hosted 32-bit execution, and the other external gates remain open.
+
+## 12. Heartwood scoped interoperability
+
+Status: **scoped host/vector interoperability pass; complete acceptance not run**
+
+Heartwood PR [#272](https://github.com/forgesworn/heartwood-esp32/pull/272)
+merged as `472ae52ba9342dfde61bb8a20347b1aad22d8d9e`. Its implementation
+commit `ad83fca8dd34bea00e2468764cec7a35c4f9852a` pins both Heartwood manifests
+and locks to this repository's `1c0adec` revision (crate 0.1.2), with default
+features disabled and no other dependency movement. Claude and Codex reviewed
+that exact commit read-only and both recommend approve, conditional on hosted
+firmware-size CI. These are independent AI reviews, not human or production
+approval.
+
+Local rustc 1.94.1 verification passed 1230 full k256 unit tests and 13
+integration tests, 359 secp256k1 baseline unit tests and ten integration tests,
+98 firmware-backend allocation tests, and five fresh-R tests. The real adapter
+executes strict receipts, forwarding, witness transitions, response/replay
+rejection and storage faults. Independent inputs and expected outputs are in
+Heartwood's `common/tests/fixtures/`; the exchange evidence includes its Python
+journal generator and 36 actual-ECDH VMLS Introduction vectors. `cargo deny`
+reported advisories, bans, licences and sources OK.
+
+Heartwood PR CI 42278785850 passed every job, including V3, V4, T-Display, C6
+and ESP8266 builds. Its V4 app image is 2,094,800 bytes against the
+2,097,152-byte slot, leaving 2,352 bytes. Local old/new images were both
+oversize (2,126,656/2,126,304 bytes), so local size is explicitly not a pass;
+the hosted candidate result is the accepted compilation/image evidence. No
+board was flashed and no physical timing, stack, RAM or power measurement was
+made.
+
+The matrix pass is limited to allocation/witness/fresh-R host suites and fixture
+exchange. Binding/capability/Welcome, general record exchange and replay,
+commit slots, manifest restore and lane behaviour remain **not run** in
+Heartwood. Witness and allocation forwarding have host-fixture coverage, not a
+live external service or deployment test. Detailed evidence is in Heartwood's
+`docs/2026-10-11-allocation-strict-history.md` and the PR 272 CI logs.
+
+Next action: run Browser interoperability after its checkout is authorised.
+Physical-device acceptance, the remaining downstream implementations, and all
+other separate assurance gates remain open.
