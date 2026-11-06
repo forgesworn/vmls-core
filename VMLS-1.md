@@ -93,7 +93,9 @@ store the envelope without understanding MLS or opening key 3.
 Envelope errors map to stable codes as follows: malformed input to `Malformed`,
 non-canonical input to `NonCanonical`, another short-form profile to
 `UnsupportedVersion`, mailbox mismatch to `WrongMailbox`, empty ciphertext to
-`Empty`, and excess ciphertext to `TooLarge`.
+`Empty`, and excess ciphertext to `TooLarge`. The envelope API names the last
+two variants `EmptyCiphertext` and `CiphertextTooLarge`; those are the strings
+used by the envelope vector before conversion to `ErrorCode`.
 
 ## 4. Exporter and secret derivations
 
@@ -308,7 +310,9 @@ record to an introduction mailbox.
 
 Capability expiration MUST be later than `now`, no more than seven days ahead,
 and no later than binding expiration. Its binding MUST verify against the leaf
-parsed from key 3 and the caller's binding policy.
+parsed from key 3 and the caller's binding policy. Verification returns
+`CapabilityExpired` or `CapabilityLifetimeTooLong` before binding errors, then
+verifies the binding, and finally checks `CapabilityOutlivesBinding`.
 
 **Adapter obligation:** key 4 MUST be byte-identical to the binding extension
 in the KeyPackage. `CapabilityRecord::verify` receives only the leaf identity

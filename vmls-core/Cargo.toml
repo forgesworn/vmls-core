@@ -1,6 +1,6 @@
 [package]
 name = "vmls-core"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 # The patched crypto-bigint 0.7.6 graph requires Rust 1.87. The published
 # repository's CI checks the 1.87 floor and the pinned 1.94.1 toolchain in

@@ -34,3 +34,14 @@ there and copied here. Status: pre-release, not independently audited.
 cd vmls-core && cargo test
 cargo test --no-default-features
 ```
+
+From the repository root, Node.js 20 or later runs the dependency-free
+independent reader for all 11 vector suites without compiling or calling the
+Rust crate:
+
+```sh
+node vectors/verify-vmls.mjs
+```
+
+Its secp256k1 arithmetic is test-only, is not constant-time, and handles only
+the public fixtures.
