@@ -202,6 +202,10 @@ fn schnorr_verify(pubkey: &[u8; 32], message: &[u8; 32], sig: &[u8; 64]) -> Opti
 
 impl DeviceCredential {
     /// The NIP-01 serialisation `[0,pubkey,created_at,20460,tags,content]`.
+    ///
+    /// The caller MUST prevalidate a caller-constructed credential against
+    /// contract §6 before signing or embedding it; typed construction does not
+    /// enforce the structural bounds.
     pub fn serialize_nip01(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(256);
         out.extend_from_slice(b"[0,\"");
@@ -230,7 +234,8 @@ impl DeviceCredential {
         out
     }
 
-    /// The Nostr event id.
+    /// The Nostr event id. The caller MUST prevalidate a caller-constructed
+    /// credential against contract §6 before signing this message.
     pub fn id(&self) -> [u8; 32] {
         Sha256::digest(self.serialize_nip01()).into()
     }

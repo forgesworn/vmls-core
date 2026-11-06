@@ -77,6 +77,30 @@ fn capability_outcome(input: &[u8]) -> Result<(), ErrorCode> {
 }
 
 #[test]
+fn constructed_values_require_structural_prevalidation() {
+    let mut binding = LeafBinding::decode(&valid_binding()).unwrap();
+    binding.expires_at = vmls_core::MAX_SAFE_INTEGER + 1;
+    assert_eq!(
+        LeafBinding::decode(&binding.encode()),
+        Err(ErrorCode::Malformed)
+    );
+
+    let mut binding = LeafBinding::decode(&valid_binding()).unwrap();
+    binding.credential.tags = (0..17).map(|index| vec![index.to_string()]).collect();
+    assert_eq!(
+        LeafBinding::decode(&binding.encode()),
+        Err(ErrorCode::TooLarge)
+    );
+
+    let mut capability = CapabilityRecord::decode(&valid_capability()).unwrap();
+    capability.expires_at = vmls_core::MAX_SAFE_INTEGER + 1;
+    assert_eq!(
+        CapabilityRecord::decode(&capability.encode().unwrap()),
+        Err(ErrorCode::Malformed)
+    );
+}
+
+#[test]
 fn binding_random_bytes_truncations_and_flips() {
     let valid = valid_binding();
     assert_eq!(binding_outcome(&valid), Ok(()));

@@ -125,6 +125,12 @@ function json(relative) {
   return JSON.parse(readFileSync(path.join(root, relative), "utf8"));
 }
 
+function jsonExactInts(relative) {
+  const source = readFileSync(path.join(root, relative), "utf8");
+  const quoted = source.replace(/("v"\s*:\s*)(-?(?:0|[1-9]\d*))(?=\s*[,}\]])/g, '$1"$2"');
+  return JSON.parse(quoted);
+}
+
 function outcome(fn) {
   try {
     return { ok: true, value: fn() };
@@ -375,7 +381,7 @@ function schnorrVerify(publicKey, message, signature) {
   if (!point) return false;
   const r = BigInt(`0x${signature.subarray(0, 32).toString("hex")}`);
   const s = BigInt(`0x${signature.subarray(32).toString("hex")}`);
-  if (r >= P || s >= N) return false;
+  if (r >= P || s >= N || s === 0n) return false;
   const e = BigInt(`0x${taggedHash("BIP0340/challenge", signature.subarray(0, 32), publicKey, message).toString("hex")}`) % N;
   const negativePoint = { x: point.x, y: mod(-point.y), z: 1n };
   const result = affine(jadd(scalarPoint(s, { ...G, z: 1n }), scalarPoint(e, negativePoint)));
@@ -428,9 +434,9 @@ function credentialId(credential) {
 function verifyPersonCredential(credential, now, policy) {
   const id = credentialId(credential);
   if (!schnorrVerify(credential.pubkey, id, credential.sig)) fail("CredentialSignatureInvalid");
-  if (singleTag(credential.tags, "scope") !== "person") fail("CredentialNotPersonScoped");
   const d = singleTag(credential.tags, "d");
-  if (d !== credential.pubkey.toString("hex")) fail("CredentialNotPersonScoped");
+  const scope = singleTag(credential.tags, "scope");
+  if (d !== credential.pubkey.toString("hex") || scope !== "person") fail("CredentialNotPersonScoped");
   if (policy.expectedIdentity && !credential.pubkey.equals(policy.expectedIdentity)) {
     fail("CredentialWrongIdentity");
   }
@@ -439,8 +445,8 @@ function verifyPersonCredential(credential, now, policy) {
   const expirationText = singleTag(credential.tags, "expiration");
   if (expirationText === null) fail("CredentialMalformed");
   const expiresAt = decimalTimestamp(expirationText);
-  if (credential.createdAt > now + 600n) fail("CredentialNotYetValid");
   if (expiresAt <= now) fail("CredentialExpired");
+  if (credential.createdAt > now + 600n) fail("CredentialNotYetValid");
   const lifetime = 30n * 86400n;
   if (expiresAt > credential.createdAt + lifetime || expiresAt > now + lifetime) {
     fail("CredentialLifetimeTooLong");
@@ -666,7 +672,7 @@ function encodeWitnessRequest(op, fields) {
   return concat(...parts);
 }
 
-function parseSlotReceipt(input, pinnedNode) {
+function decodeSlotReceipt(input) {
   if (input.length !== 197) fail("Malformed");
   if (input[0] !== 1) fail("UnsupportedVersion");
   const receipt = {
@@ -677,10 +683,15 @@ function parseSlotReceipt(input, pinnedNode) {
     envelopeHash: input.subarray(101, 133),
     signature: input.subarray(133),
   };
-  if (!receipt.node.equals(pinnedNode)) fail("ReceiptWrongNode");
   const digest = sha256(Buffer.from("VMLS/1 slot receipt"), receipt.installation, receipt.slot, u32be(receipt.attempt), receipt.envelopeHash);
-  if (!edVerify(null, digest, edPublicKey(receipt.node), receipt.signature)) fail("ReceiptSignatureInvalid");
   return { ...receipt, digest };
+}
+
+function parseSlotReceipt(input, pinnedNode) {
+  const receipt = decodeSlotReceipt(input);
+  if (!receipt.node.equals(pinnedNode)) fail("ReceiptWrongNode");
+  if (!edVerify(null, receipt.digest, edPublicKey(receipt.node), receipt.signature)) fail("ReceiptSignatureInvalid");
+  return receipt;
 }
 
 function verifyWitnessReceipt(input, pinnedNode, challenge) {
@@ -700,7 +711,7 @@ function verifyEvidence(input, pinnedNode) {
   const count = input[9];
   if (![1, 2].includes(count) || input.length !== 10 + count * 197) fail("Malformed");
   const receipts = [];
-  for (let i = 0; i < count; i += 1) receipts.push(parseSlotReceipt(input.subarray(10 + i * 197, 10 + (i + 1) * 197), pinnedNode));
+  for (let i = 0; i < count; i += 1) receipts.push(decodeSlotReceipt(input.subarray(10 + i * 197, 10 + (i + 1) * 197)));
   if (count === 2) {
     const [a, b] = receipts;
     const pairA = concat(u32be(a.attempt), a.envelopeHash);
@@ -709,6 +720,7 @@ function verifyEvidence(input, pinnedNode) {
       fail("EvidenceNotEquivocation");
     }
   }
+  for (let i = 0; i < count; i += 1) parseSlotReceipt(input.subarray(10 + i * 197, 10 + (i + 1) * 197), pinnedNode);
   return { preEpoch: input.readBigUInt64BE(1), receipts };
 }
 
@@ -764,6 +776,23 @@ function verifyAllocation(f, name, method) {
   equal(parseWitnessRequest(body, name).subject, fields.subject, `allocation ${name}: decoded request`);
 }
 
+function envelopeCiphertext(reader) {
+  const first = reader.byte();
+  let length;
+  if (first >= 0x40 && first <= 0x57) length = first & 31;
+  else if (first === 0x58) length = reader.byte();
+  else if (first === 0x59) length = reader.take(2).readUInt16BE();
+  else if (first === 0x5a) length = reader.take(4).readUInt32BE();
+  else fail("NonCanonical");
+  if ((length <= 23 && first !== (0x40 | length))
+    || (length > 23 && length <= 0xff && first !== 0x58)
+    || (length > 0xff && length <= 0xffff && first !== 0x59)
+    || (length > 0xffff && first !== 0x5a)) fail("NonCanonical");
+  if (length === 0) fail("EmptyCiphertext");
+  if (length > 1048576) fail("TooLarge");
+  return reader.take(length);
+}
+
 suite("envelope", () => {
   const file = json("vmls-core/vectors/vmls-envelope-v1.json");
   for (const test of file.cases) {
@@ -771,14 +800,18 @@ suite("envelope", () => {
       const r = new Reader(hex(test.encodedHex));
       r.map(3);
       r.key(1);
-      if (r.uint() !== 1n) fail("UnsupportedVersion");
+      const profile = r.byte();
+      if (profile !== 1) {
+        if (profile <= 23) fail("UnsupportedVersion");
+        fail("NonCanonical");
+      }
       r.key(2);
-      const mailbox = r.fixed(32);
-      r.key(3);
-      const ciphertext = r.bytes(1048576);
-      r.finish();
+      if (!r.take(2).equals(Buffer.from([0x58, 32]))) fail("NonCanonical");
+      const mailbox = r.take(32);
       if (!mailbox.equals(hex(test.activeMailboxHex ?? file.mailboxHex))) fail("WrongMailbox");
-      if (ciphertext.length === 0) fail("EmptyCiphertext");
+      r.key(3);
+      const ciphertext = envelopeCiphertext(r);
+      r.finish();
       return { ciphertext };
     });
     checkOutcome(`envelope ${test.name}`, actual, test.expect);
@@ -970,6 +1003,10 @@ suite("security design", () => {
     equal(evidence.preEpoch, 7n, `${name}: epoch`);
     equal(evidence.receipts.length, 2, `${name}: pair`);
   }
+  for (const test of d.precedence.cases) {
+    const actual = outcome(() => verifyEvidence(hex(test.evidenceHex), node));
+    checkOutcome(`evidence ${test.name}`, actual, test.expect);
+  }
   const witness = verifyWitnessReceipt(hex(d.witnessHex), node, Buffer.alloc(32, 0x77));
   equal(witness.status, 0, "witness status");
   equal(witness.seq, 9n, "witness sequence");
@@ -999,7 +1036,7 @@ suite("witness requests", () => {
 });
 
 suite("state manifests", () => {
-  const file = json("vmls-core/vectors/vmls-manifest-v1.json");
+  const file = jsonExactInts("vmls-core/vectors/vmls-manifest-v1.json");
   for (const test of file.cases) {
     const manifest = manifestFor(test);
     equal(manifest, hex(test.manifestHex), `manifest ${test.name}`);
