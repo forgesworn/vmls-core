@@ -10,12 +10,13 @@ import {
   sign as edSign,
   verify as edVerify,
 } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
 const defaultRoot = fileURLToPath(new URL("..", import.meta.url));
-const root = path.resolve(process.argv[2] ?? defaultRoot);
+const rootArgument = process.argv.slice(2).find((argument) => !argument.startsWith("--"));
+const root = path.resolve(rootArgument ?? defaultRoot);
 const MAX_SAFE = (1n << 53n) - 1n;
 const BUCKETS = [1024, 4096, 16384, 65536, 1048576];
 const ERROR_NUMBERS = {
@@ -846,7 +847,7 @@ function hostileInputs(file) {
   return out;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
 suite("envelope", () => {
   const file = json("vmls-core/vectors/vmls-envelope-v1.json");
   for (const test of file.cases) {
@@ -1160,6 +1161,7 @@ export {
   parseWitnessRequest,
   recordKeyNonce,
   sealRecord,
+  schnorrVerify,
   sha256,
   verifyBinding,
   verifyCapability,

@@ -44,11 +44,20 @@ jobs:
       - name: Independent Node vector reader
         run: |
           node --check vectors/verify-vmls.mjs
-          node vectors/verify-vmls.mjs
+          output=$(node vectors/verify-vmls.mjs)
+          printf '%s\n' "$output"
+          [[ "$output" == *"PASS 11 suites, 29169 independent assertions"* ]]
+          ln -s vectors/verify-vmls.mjs .verify-vmls-link.mjs
+          output=$(node .verify-vmls-link.mjs)
+          rm .verify-vmls-link.mjs
+          printf '%s\n' "$output"
+          [[ "$output" == *"PASS 11 suites, 29169 independent assertions"* ]]
       - name: Independent vector regeneration
         run: |
           node --check vectors/generate-vmls.mjs
-          node vectors/generate-vmls.mjs
+          output=$(node vectors/generate-vmls.mjs)
+          printf '%s\n' "$output"
+          [[ "$output" == *"PASS 11 vector files regenerated"* ]]
       - name: Canonical VMLS envelope codec
         run: cargo test --manifest-path vmls-core/Cargo.toml --locked
       - name: Declared Rust 1.87 floor in both modes

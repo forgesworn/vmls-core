@@ -538,15 +538,16 @@ approval remain separate gates.
 
 ## 11. Independent vector regeneration
 
-Status: **implemented and locally verified; independent AI review pending**
+Status: **implemented and locally verified; independent AI re-review pending**
 
-`vectors/generate-vmls.mjs` is now included and uses only Node.js built-ins and
-the independent reader's primitive stack, never Rust. It recomputes all expected
+`vectors/generate-vmls.mjs` is included and uses only Node.js built-ins and the
+independent reader's primitive stack, never Rust. It recomputes all expected
 fields and error outcomes for every published fixture family: envelope, binding,
 capability, derivations/records, lanes, device credentials, security design,
 witness requests, manifests, allocation forwarding, and the hostile corpus.
 Deterministic receipt, evidence, witness, and allocation signatures are
-recomputed from public fixture seeds.
+recomputed from public fixture seeds. Receipt bodies, installations, slots, and
+envelope hashes are rebuilt from scenario fields rather than signed unchanged.
 
 Run from the repository root with Node.js 20 or later:
 
@@ -556,18 +557,28 @@ node vectors/generate-vmls.mjs
 ```
 
 Expected result: `PASS 11 vector files regenerated; content and exact bytes
-match; negative control passed`. The generator requires deep semantic equality
-and exact source-byte compatibility for all 11 files. Its negative control
-changes a canonical envelope into a trailing-byte case and requires a different
-`NonCanonical` outcome. Importing `verify-vmls.mjs` as a library does not execute
-the suites; direct execution still reports `PASS 11 suites, 29169 independent
-assertions`.
+match; negative control passed`. Default mode requires deep semantic equality
+and independently rendered source-byte equality for all 11 files. The renderer
+preserves pretty JSON, compact envelope/security cases, appended compact cases,
+full-`i64` numeric tokens, and single-line hostile code arrays. `--write` permits
+a deliberate versioned fixture change; it is not run by CI. BIP-340 credential
+signatures use random auxiliary data, so they are independently verified but not
+regenerated; that limitation is explicit and does not affect deterministic
+Ed25519 signatures.
 
-CI runs the reader and the generator. Local verification also passed 53 Rust
-tests in each feature mode, both Rust toolchains, `thumbv7em-none-eabi`, Android
-and Linux 32-bit test compilation, formatting, dependency audit, all Appendix A
-hashes, workflow YAML parsing, and `git diff --check`.
+Negative controls require a trailing-byte envelope to change outcome and rendered
+bytes, prove that changing only an expected identity cannot influence validation,
+reject a changed retained public key, and require a changed installation to alter
+the rebuilt receipt. Importing `verify-vmls.mjs` as a library does not execute
+the suites. Direct execution resolves the entry path's real path and reports
+`PASS 11 suites, 29169 independent assertions`, including through a symlink.
 
-Next action: obtain independent AI review of the generator and its evidence,
+CI runs the reader and generator and asserts their PASS lines. Local verification
+also passed 53 Rust tests in each feature mode, both Rust toolchains,
+`thumbv7em-none-eabi`, Android and Linux 32-bit test compilation, formatting,
+dependency audit, all Appendix A hashes, workflow YAML parsing, and
+`git diff --check`.
+
+Next action: obtain independent AI re-review of the generator and its evidence,
 then deliver the tooling. Downstream interoperability, physical-device
 acceptance, hosted 32-bit execution, and the other external gates remain open.

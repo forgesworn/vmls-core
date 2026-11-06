@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   ERROR_NUMBERS,
   Reader,
@@ -27,14 +28,17 @@ import {
   parseWitnessRequest,
   recordKeyNonce,
   sealRecord,
+  schnorrVerify,
   sha256,
   verifyBinding,
   verifyCapability,
   verifyEvidence,
 } from "./verify-vmls.mjs";
 
-const root = path.resolve(process.argv[2] ?? new URL("..", import.meta.url).pathname);
-const write = process.argv.includes("--write");
+const args = process.argv.slice(2);
+const write = args.includes("--write");
+const rootArgument = args.find((argument) => !argument.startsWith("--"));
+const root = path.resolve(rootArgument ?? fileURLToPath(new URL("..", import.meta.url)));
 const clone = (value) => structuredClone(value);
 const hexText = (value) => value.toString("hex");
 const readText = (relative) => readFileSync(path.join(root, relative), "utf8");
@@ -206,34 +210,48 @@ function singleTag(tags, name) {
   return matches.length === 1 ? matches[0][1] : null;
 }
 
-function nostrId(event) {
-  return hexText(sha256(Buffer.from(JSON.stringify([
+function nostrIdBytes(event) {
+  return sha256(Buffer.from(JSON.stringify([
     0,
     event.pubkey,
     event.created_at,
     event.kind,
     event.tags,
     event.content,
-  ]))));
+  ])));
+}
+
+function nostrId(event) {
+  return hexText(nostrIdBytes(event));
+}
+
+function verifierUsesPersonScope(test) {
+  return !["room-passes", "person-presented-to-room", "room-with-scope-tag"].includes(test.name);
 }
 
 function regenerateDeviceCredentials(file) {
   const out = clone(file);
+  const revokedId = out.cases.find((test) => test.name === "person-passes").event.id;
+  out.tombstone.tags = out.tombstone.tags.map((tag) => tag[0] === "e" ? ["e", revokedId] : tag);
   out.tombstone.id = nostrId(out.tombstone);
+  assert(schnorrVerify(hex(out.tombstone.pubkey), nostrIdBytes(out.tombstone), hex(out.tombstone.sig)), "tombstone signature");
   for (const test of out.cases) {
     const event = test.event;
-    event.id = nostrId(event);
-    const person = Object.hasOwn(test.expect, "identity");
-    const target = person ? singleTag(event.tags, "d") : out.roomId;
+    const id = nostrIdBytes(event);
+    event.id = hexText(id);
+    assert(schnorrVerify(hex(event.pubkey), id, hex(event.sig)), `${test.name}: signature`);
+    const verifierPerson = verifierUsesPersonScope(test);
+    const target = verifierPerson ? event.pubkey : out.roomId;
     const expiry = Number(singleTag(event.tags, "expiration"));
     const accepted = singleTag(event.tags, "d") === target
       && singleTag(event.tags, "device") === out.testOnlyKeys.device
-      && (person ? singleTag(event.tags, "scope") === "person" : singleTag(event.tags, "scope") === null)
+      && (verifierPerson ? singleTag(event.tags, "scope") === "person" : singleTag(event.tags, "scope") === null)
       && event.created_at <= out.now + 600
       && expiry > out.now
       && expiry <= event.created_at + 30 * 86400
       && expiry <= out.now + 30 * 86400
       && !test.tombstoned;
+    test.expect = verifierPerson ? { identity: event.pubkey } : { roomId: out.roomId };
     test.ok = accepted;
   }
   return out;
@@ -247,6 +265,18 @@ function signSlot(raw, seed) {
   return out;
 }
 
+function buildSlot(raw, seed, node, envelope, installation) {
+  const old = decodeSlotReceipt(raw);
+  const out = Buffer.alloc(197);
+  out[0] = 1;
+  node.copy(out, 1);
+  installation.copy(out, 33);
+  old.slot.copy(out, 65);
+  out.writeUInt32BE(old.attempt, 97);
+  sha256(envelope).copy(out, 101);
+  return signSlot(out, seed);
+}
+
 function signWitness(raw, seed) {
   const digest = sha256(Buffer.from("VMLS/1 witness receipt"), raw.subarray(0, 106));
   const signature = edSign(null, digest, edPrivateKey(seed));
@@ -255,10 +285,10 @@ function signWitness(raw, seed) {
   return out;
 }
 
-function signEvidence(raw, seed) {
+function buildEvidence(raw, seed, node, envelopes, installation) {
   const out = Buffer.from(raw);
   for (let i = 0; i < out[9]; i += 1) {
-    signSlot(out.subarray(10 + i * 197, 10 + (i + 1) * 197), seed).copy(out, 10 + i * 197);
+    buildSlot(out.subarray(10 + i * 197, 10 + (i + 1) * 197), seed, node, envelopes[i], installation).copy(out, 10 + i * 197);
   }
   return out;
 }
@@ -266,14 +296,17 @@ function signEvidence(raw, seed) {
 function regenerateSecurityDesign(file) {
   const out = clone(file);
   const seed = hex(out.seedHex);
-  out.nodeHex = hexText(edPublicFromSeed(seed));
-  for (const name of ["slotReceiptHex", "otherSlotReceiptHex", "relabelledSlotReceiptHex", "foreignSlotReceiptHex"]) {
-    out[name] = hexText(signSlot(hex(out[name]), seed));
-  }
+  const node = edPublicFromSeed(seed);
+  const installation = hex(out.installationHex);
+  out.nodeHex = hexText(node);
+  out.slotReceiptHex = hexText(buildSlot(hex(out.slotReceiptHex), seed, node, hex(out.envelopeHex), installation));
+  out.otherSlotReceiptHex = hexText(buildSlot(hex(out.otherSlotReceiptHex), seed, node, hex(out.otherEnvelopeHex), installation));
+  out.relabelledSlotReceiptHex = hexText(buildSlot(hex(out.relabelledSlotReceiptHex), seed, node, hex(out.envelopeHex), installation));
+  out.foreignSlotReceiptHex = hexText(buildSlot(hex(out.foreignSlotReceiptHex), seed, node, hex(out.envelopeHex), hex(out.foreignInstallationHex)));
   out.slotDigestHex = hexText(decodeSlotReceipt(hex(out.slotReceiptHex)).digest);
-  for (const name of ["evidenceHex", "relabelledEvidenceHex", "attemptOrderEvidenceHex"]) {
-    out[name] = hexText(signEvidence(hex(out[name]), seed));
-  }
+  out.evidenceHex = hexText(buildEvidence(hex(out.evidenceHex), seed, node, [hex(out.otherEnvelopeHex), hex(out.envelopeHex)], installation));
+  out.relabelledEvidenceHex = hexText(buildEvidence(hex(out.relabelledEvidenceHex), seed, node, [hex(out.envelopeHex), hex(out.envelopeHex)], installation));
+  out.attemptOrderEvidenceHex = hexText(buildEvidence(hex(out.attemptOrderEvidenceHex), seed, node, [hex(out.envelopeHex), hex(out.otherEnvelopeHex)], installation));
   out.witnessHex = hexText(signWitness(hex(out.witnessHex), seed));
   const epoch = hex(out.epochSecretHex);
   const leaf = hex(out.leafHex);
@@ -296,15 +329,14 @@ function regenerateWitnessRequests(file) {
     }
     const value = actual.value;
     test.bodyHex = hexText(encodeWitnessRequest(test.op, value));
-    test.expect = success({
-      subjectHex: hexText(value.subject),
-      challengeHex: hexText(value.challenge),
-      ...(test.op === "advance" ? {
-        expectedSeq: Number(value.expectedSeq),
-        expectedDigestHex: hexText(value.expectedDigest),
-        nextDigestHex: hexText(value.nextDigest),
-      } : {}),
+    const expected = { ok: true, subjectHex: hexText(value.subject) };
+    if (test.op === "advance") Object.assign(expected, {
+      expectedSeq: Number(value.expectedSeq),
+      expectedDigestHex: hexText(value.expectedDigest),
+      nextDigestHex: hexText(value.nextDigest),
     });
+    expected.challengeHex = hexText(value.challenge);
+    test.expect = expected;
   }
   return out;
 }
@@ -372,6 +404,84 @@ function regenerateHostile(file) {
   return out;
 }
 
+function compactValue(value) {
+  if (Array.isArray(value)) return `[${value.map(compactValue).join(", ")}]`;
+  if (value && typeof value === "object") {
+    return `{ ${Object.entries(value).map(([key, item]) => `${JSON.stringify(key)}: ${compactValue(item)}`).join(", ")} }`;
+  }
+  return JSON.stringify(value);
+}
+
+function compactCase(value) {
+  return compactValue(value);
+}
+
+function renderEnvelope(file) {
+  const lines = ["{"];
+  const entries = Object.entries(file);
+  for (const [index, [key, value]] of entries.entries()) {
+    const comma = index === entries.length - 1 ? "" : ",";
+    if (key === "cases") {
+      lines.push('  "cases": [');
+      for (const [caseIndex, test] of value.entries()) {
+        lines.push(`    ${compactCase(test)}${caseIndex === value.length - 1 ? "" : ","}`);
+      }
+      lines.push(`  ]${comma}`);
+    } else {
+      lines.push(`  ${JSON.stringify(key)}: ${JSON.stringify(value)}${comma}`);
+    }
+  }
+  lines.push("}", "");
+  return lines.join("\n");
+}
+
+function renderSecurityDesign(file) {
+  const lines = ["{"];
+  const entries = Object.entries(file);
+  for (const [index, [key, value]] of entries.entries()) {
+    const comma = index === entries.length - 1 ? "" : ",";
+    if (key === "precedence") {
+      lines.push('  "precedence": {');
+      lines.push('    "cases": [');
+      for (const [caseIndex, test] of value.cases.entries()) {
+        lines.push(`      ${compactCase(test)}${caseIndex === value.cases.length - 1 ? "" : ","}`);
+      }
+      lines.push("    ]", `  }${comma}`);
+    } else {
+      lines.push(`  ${JSON.stringify(key)}: ${JSON.stringify(value)}${comma}`);
+    }
+  }
+  lines.push("}", "");
+  return lines.join("\n");
+}
+
+function renderPrettyWithCompactTail(file, firstCompactIndex) {
+  const head = JSON.stringify({ ...file, cases: file.cases.slice(0, firstCompactIndex) }, null, 2);
+  const closing = "  ]\n}";
+  const compact = file.cases.slice(firstCompactIndex);
+  if (compact.length === 0) return `${head}\n`;
+  const prefix = head.slice(0, -closing.length).trimEnd();
+  const rendered = compact.map((test, index) => `    ${JSON.stringify(test)}${index === compact.length - 1 ? "" : ","}`);
+  return `${prefix},\n${rendered.join("\n")}\n  ]\n}\n`;
+}
+
+function renderHostile(file) {
+  return (JSON.stringify(file, null, 2) + "\n").replace(/"codes": \[\n([\s\S]*?)\n\s*\]/g, (_, values) => {
+    return `"codes": [${values.replace(/\s+/g, "")}]`;
+  });
+}
+
+function render(relative, regenerated) {
+  if (relative.endsWith("vmls-envelope-v1.json")) return renderEnvelope(regenerated);
+  if (relative.endsWith("vmls-security-design-v1.json")) return renderSecurityDesign(regenerated);
+  if (relative.endsWith("vmls-binding-v1.json")) return renderPrettyWithCompactTail(regenerated, 41);
+  if (relative.endsWith("vmls-manifest-v1.json")) {
+    return renderPrettyWithCompactTail(regenerated, 7).replace(/("t":\s*"int",\s*"v":\s*)"(-?\d+)"/g, "$1$2");
+  }
+  if (relative.endsWith("vmls-hostile-v1.json")) return renderHostile(regenerated);
+  return JSON.stringify(regenerated, null, 2) + "\n";
+}
+
 const generators = {
   "vmls-core/vectors/vmls-envelope-v1.json": regenerateEnvelope,
   "vmls-core/vectors/vmls-binding-v1.json": regenerateBinding,
@@ -391,23 +501,41 @@ function load(relative) {
 }
 
 function negativeControl() {
-  const original = regenerateEnvelope(load("vmls-core/vectors/vmls-envelope-v1.json"));
+  const relative = "vmls-core/vectors/vmls-envelope-v1.json";
+  const original = regenerateEnvelope(load(relative));
   const changed = clone(original);
   changed.cases[0].encodedHex = `${changed.cases[0].encodedHex}00`;
   const regenerated = regenerateEnvelope(changed);
   assert.notDeepStrictEqual(regenerated.cases[0].expect, original.cases[0].expect);
   assert.equal(regenerated.cases[0].expect.error, "NonCanonical");
+  assert.notEqual(render(relative, regenerated), readText(relative));
+
+  const credentials = load("vectors/device-credential.json");
+  const expectedPoison = clone(credentials);
+  expectedPoison.cases[0].expect.identity = "ff".repeat(32);
+  assert.deepStrictEqual(regenerateDeviceCredentials(expectedPoison), credentials);
+  const keyPoison = clone(credentials);
+  keyPoison.cases[0].event.pubkey = "00".repeat(32);
+  assert.throws(() => regenerateDeviceCredentials(keyPoison), /signature/);
+
+  const design = load("vmls-core/vectors/vmls-security-design-v1.json");
+  const installationPoison = clone(design);
+  installationPoison.installationHex = "44".repeat(32);
+  const rebuilt = regenerateSecurityDesign(installationPoison);
+  assert.notEqual(rebuilt.slotReceiptHex, design.slotReceiptHex);
+  assert(decodeSlotReceipt(hex(rebuilt.slotReceiptHex)).installation.equals(Buffer.alloc(32, 0x44)));
 }
 
 for (const [relative, generate] of Object.entries(generators)) {
   const originalText = readText(relative);
   const original = load(relative);
   const regenerated = generate(original);
-  const current = load(relative);
-  assert.deepStrictEqual(regenerated, current, `${relative}: regenerated content differs`);
-  const canonical = JSON.stringify(regenerated, null, 2) + "\n";
-  const rendered = canonical === originalText ? canonical : originalText;
-  assert.equal(rendered, originalText, `${relative}: exact bytes differ`);
+  const rendered = render(relative, regenerated);
+  if (!write) {
+    const current = load(relative);
+    assert.deepStrictEqual(regenerated, current, `${relative}: regenerated content differs`);
+    assert.equal(rendered, originalText, `${relative}: exact bytes differ`);
+  }
   if (write) writeFileSync(path.join(root, relative), rendered);
   console.log(`ok ${relative}`);
 }

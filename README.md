@@ -53,3 +53,8 @@ require their content and exact bytes to match, and run the negative control:
 node --check vectors/generate-vmls.mjs
 node vectors/generate-vmls.mjs
 ```
+
+Default mode checks semantic and independently rendered byte equality. Use
+`--write` only for a deliberate versioned fixture change. BIP-340 credential
+signatures are independently verified, not regenerated, because their auxiliary
+data is random.
