@@ -45,3 +45,17 @@ node vectors/verify-vmls.mjs
 
 Its secp256k1 arithmetic is test-only, is not constant-time, and handles only
 the public fixtures.
+
+Regenerate all 11 vector files with the same dependency-free primitive stack,
+require their content and exact bytes to match, and run the negative control:
+
+```sh
+node --check vectors/generate-vmls.mjs
+node vectors/generate-vmls.mjs
+```
+
+Default mode checks semantic and independently rendered byte equality. Use
+`--write` only for a deliberate versioned fixture change; it reports files
+written rather than compatibility equality. BIP-340 credential signatures are
+independently verified, not regenerated, because their auxiliary data is random.
+Signed binding and capability inputs are retained and verified.

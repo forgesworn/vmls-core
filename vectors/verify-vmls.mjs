@@ -10,12 +10,13 @@ import {
   sign as edSign,
   verify as edVerify,
 } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { readFileSync, realpathSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
 const defaultRoot = fileURLToPath(new URL("..", import.meta.url));
-const root = path.resolve(process.argv[2] ?? defaultRoot);
+const rootArgument = process.argv.slice(2).find((argument) => !argument.startsWith("--"));
+const root = path.resolve(rootArgument ?? defaultRoot);
 const MAX_SAFE = (1n << 53n) - 1n;
 const BUCKETS = [1024, 4096, 16384, 65536, 1048576];
 const ERROR_NUMBERS = {
@@ -797,6 +798,65 @@ function envelopeCiphertext(reader) {
   return reader.take(length);
 }
 
+class Lcg {
+  constructor(seed) {
+    this.state = seed >>> 0;
+  }
+
+  byte() {
+    this.state = (Math.imul(this.state, 1664525) + 1013904223) >>> 0;
+    return this.state >>> 24;
+  }
+
+  bytes(length) {
+    const out = Buffer.alloc(length);
+    for (let i = 0; i < length; i += 1) out[i] = this.byte();
+    return out;
+  }
+}
+
+function hostileInputs(file) {
+  const base = hex(file.baseHex);
+  const head = hex(file.randomHeadHex);
+  const out = [];
+  for (let length = 0; length < base.length; length += 1) out.push(base.subarray(0, length));
+  for (let bit = 0; bit < base.length * 8; bit += 1) {
+    const changed = Buffer.from(base);
+    changed[Math.floor(bit / 8)] ^= 1 << (bit % 8);
+    out.push(changed);
+  }
+  const lcg = new Lcg(file.seed);
+  for (let i = 0; i < file.splices; i += 1) {
+    const cut = Math.floor(lcg.byte() * base.length / 256);
+    const resume = Math.floor(lcg.byte() * base.length / 256);
+    out.push(concat(base.subarray(0, cut), base.subarray(resume)));
+  }
+  for (let i = 0; i < file.randoms; i += 1) {
+    let input;
+    if (file.randomLength === "base") {
+      input = Buffer.alloc(base.length);
+      const random = lcg.bytes(1 + i % 24);
+      random.copy(input);
+    } else {
+      const length = ((lcg.byte() << 8) | lcg.byte()) % file.randomLength;
+      input = lcg.bytes(length);
+    }
+    if (i % 2 === 0 && input.length >= head.length) head.copy(input);
+    out.push(input);
+  }
+  return out;
+}
+
+function isDirectExecution() {
+  if (!process.argv[1] || process.argv[1] === "-") return false;
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectExecution()) {
 suite("envelope", () => {
   const file = json("vmls-core/vectors/vmls-envelope-v1.json");
   for (const test of file.cases) {
@@ -959,6 +1019,29 @@ suite("send lanes", () => {
   }
 });
 
+function verifierUsesPersonScope(test) {
+  return !["room-passes", "person-presented-to-room", "room-with-scope-tag"].includes(test.name);
+}
+
+function deviceCredentialAccepted(file, test) {
+  const event = test.event;
+  const single = (name) => {
+    const matches = event.tags.filter((tag) => tag[0] === name);
+    return matches.length === 1 ? matches[0][1] : null;
+  };
+  const verifierPerson = verifierUsesPersonScope(test);
+  const target = verifierPerson ? event.pubkey : file.roomId;
+  const expiry = Number(single("expiration"));
+  return single("d") === target
+    && single("device") === file.testOnlyKeys.device
+    && (verifierPerson ? single("scope") === "person" : single("scope") === null)
+    && event.created_at <= file.now + 600
+    && expiry > file.now
+    && expiry <= event.created_at + 30 * 86400
+    && expiry <= file.now + 30 * 86400
+    && !test.tombstoned;
+}
+
 suite("device credentials", () => {
   const file = json("vectors/device-credential.json");
   const nostrId = (event) => sha256(Buffer.from(JSON.stringify([0, event.pubkey, event.created_at, event.kind, event.tags, event.content])));
@@ -969,22 +1052,13 @@ suite("device credentials", () => {
     const id = nostrId(event);
     equal(id, hex(event.id), `credential ${test.name}: id`);
     ok(schnorrVerify(hex(event.pubkey), id, hex(event.sig)), `credential ${test.name}: signature`);
-    const tags = (name) => event.tags.filter((tag) => tag[0] === name);
-    const single = (name) => tags(name).length === 1 ? tags(name)[0][1] : null;
-    const person = Object.hasOwn(test.expect, "identity");
-    const target = person ? test.expect.identity : test.expect.roomId;
-    const expiry = Number(single("expiration"));
-    const accepted = single("d") === target
-      && single("device") === file.testOnlyKeys.device
-      && (person ? single("scope") === "person" : single("scope") === null)
-      && event.created_at <= file.now + 600
-      && expiry > file.now
-      && expiry <= event.created_at + 30 * 86400
-      && expiry <= file.now + 30 * 86400
-      && !test.tombstoned;
-    equal(accepted, test.ok, `credential ${test.name}: acceptance`);
+    equal(deviceCredentialAccepted(file, test), test.ok, `credential ${test.name}: acceptance`);
     if (test.tombstoned) equal(file.tombstone.tags[0][1], event.id, "tombstone targets credential");
   }
+  const poisoned = structuredClone(file);
+  const scenario = poisoned.cases.find((test) => test.name === "room-presented-as-person");
+  scenario.expect = { roomId: poisoned.roomId };
+  ok(deviceCredentialAccepted(poisoned, scenario) === scenario.ok, "expected scope field cannot change acceptance");
 });
 
 suite("security design", () => {
@@ -1058,55 +1132,6 @@ suite("allocation witness forwarding", () => {
   verifyAllocation(file, "advance", 2);
 });
 
-class Lcg {
-  constructor(seed) {
-    this.state = seed >>> 0;
-  }
-
-  byte() {
-    this.state = (Math.imul(this.state, 1664525) + 1013904223) >>> 0;
-    return this.state >>> 24;
-  }
-
-  bytes(length) {
-    const out = Buffer.alloc(length);
-    for (let i = 0; i < length; i += 1) out[i] = this.byte();
-    return out;
-  }
-}
-
-function hostileInputs(file) {
-  const base = hex(file.baseHex);
-  const head = hex(file.randomHeadHex);
-  const out = [];
-  for (let length = 0; length < base.length; length += 1) out.push(base.subarray(0, length));
-  for (let bit = 0; bit < base.length * 8; bit += 1) {
-    const changed = Buffer.from(base);
-    changed[Math.floor(bit / 8)] ^= 1 << (bit % 8);
-    out.push(changed);
-  }
-  const lcg = new Lcg(file.seed);
-  for (let i = 0; i < file.splices; i += 1) {
-    const cut = Math.floor(lcg.byte() * base.length / 256);
-    const resume = Math.floor(lcg.byte() * base.length / 256);
-    out.push(concat(base.subarray(0, cut), base.subarray(resume)));
-  }
-  for (let i = 0; i < file.randoms; i += 1) {
-    let input;
-    if (file.randomLength === "base") {
-      input = Buffer.alloc(base.length);
-      const random = lcg.bytes(1 + i % 24);
-      random.copy(input);
-    } else {
-      const length = ((lcg.byte() << 8) | lcg.byte()) % file.randomLength;
-      input = lcg.bytes(length);
-    }
-    if (i % 2 === 0 && input.length >= head.length) head.copy(input);
-    out.push(input);
-  }
-  return out;
-}
-
 suite("hostile corpus", () => {
   const file = json("vmls-core/vectors/vmls-hostile-v1.json");
   const leaf = { identity: hex(file.leaf.identityHex), signatureKey: hex(file.leaf.signatureKeyHex) };
@@ -1128,3 +1153,41 @@ suite("hostile corpus", () => {
 });
 
 console.log(`PASS ${suites} suites, ${assertions} independent assertions`);
+}
+
+export {
+  ERROR_NUMBERS,
+  Reader,
+  concat,
+  credentialId,
+  decodePlaintext,
+  decodeSlotReceipt,
+  ecdhX,
+  fail,
+  edPrivateKey,
+  edPublicFromSeed,
+  edSign,
+  encodeTyped,
+  encodeWitnessRequest,
+  envelopeCiphertext,
+  hex,
+  hkdfExpand,
+  hkdfExtract,
+  hostileInputs,
+  json,
+  jsonExactInts,
+  manifestFor,
+  openRecord,
+  outcome,
+  parseCapability,
+  parseSlotReceipt,
+  parseWitnessRequest,
+  recordKeyNonce,
+  sealRecord,
+  schnorrVerify,
+  sha256,
+  verifyBinding,
+  verifyCapability,
+  verifyEvidence,
+  verifyPersonCredential,
+};

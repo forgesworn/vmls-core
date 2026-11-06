@@ -2,7 +2,7 @@
 //! evidence and the fork derivations, plus the witness-request and state
 //! manifest suites. Expected values come only from
 //! `vectors/vmls-security-design-v1.json`, produced independently with
-//! node:crypto and noble, never from these codecs.
+//! Node.js built-ins, never from these codecs.
 
 mod common;
 

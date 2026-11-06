@@ -51,9 +51,8 @@ source revision. Re-run the relevant checks on the exact review candidate.
 - The VMLS/1 contract is a new source-derived draft and has not been
   independently approved.
 - Test comments identify `vectors/generate-vmls.mjs` as the independent
-  producer, but that generator is not included in this source repository.
-  Independent reading is now reproducible; independent regeneration remains
-  open.
+  producer. That generator is included and regenerates every expected object and
+  outcome for all 11 files, with a negative control.
 - No independent security audit, coverage-guided fuzzing result, formal proof,
   or side-channel assessment is asserted.
 - No downstream interoperability or physical-device result is asserted.
@@ -119,7 +118,7 @@ node --check vectors/verify-vmls.mjs
 node vectors/verify-vmls.mjs
 ```
 
-The expected final line is `PASS 11 suites, 29169 independent assertions`.
+The expected final line is `PASS 11 suites, 29170 independent assertions`.
 The reader uses `node:crypto`, a separate canonical CBOR reader, and test-only
 BigInt secp256k1 arithmetic. It recomputes signatures, derivations, ECDH,
 sealed bytes, manifests and all hostile outcomes without calling Rust. Its
@@ -130,6 +129,22 @@ independent strict verifier for those forms. Manifest JSON integers are parsed
 losslessly across the full signed 64-bit range. This is reproducible
 implementation evidence, not named reviewer approval or an independent security
 audit.
+
+Regenerate every expected object and outcome with the same dependency-free
+primitive stack and require exact source bytes to remain compatible:
+
+```sh
+node --check vectors/generate-vmls.mjs
+node vectors/generate-vmls.mjs
+```
+
+The expected final line is `PASS 11 vector files regenerated; content and exact
+bytes match; negative control passed`. The generator recomputes all expected
+fields and error outcomes from the fixture inputs, including deterministic
+signatures and every hostile code. It never calls Rust or copies expected fields
+without recomputation. The negative control changes an input and requires the
+regenerated outcome to differ. Importing the reader as a library does not run
+the suites.
 
 For every valid case:
 
@@ -297,8 +312,8 @@ this repository, so the product owner must supply acceptance thresholds.
 Before removing pre-release status or claiming production readiness:
 
 - [ ] The contract and vector compatibility policy have named reviewer approval.
-- [x] Independent vector reading is reproducible and all published cases pass
-      (§3); independent regeneration remains open.
+- [x] Independent vector reading and regeneration are reproducible and all
+      published cases pass (§3).
 - [ ] Security findings have severity, resolution, and regression evidence.
 - [ ] Each required downstream implementation has completed the matrix.
 - [ ] Physical-device results meet explicitly supplied budgets.
@@ -515,8 +530,66 @@ dependency audit, Node reader, both Rust feature modes, Rust 1.87.0 and 1.94.1,
 Android 32-bit compilation also passed. Hosted 32-bit execution remains not run.
 
 The final review-report delivery commit is documentation-only and does not alter
-the approved implementation. Issue #7 remains open for named human review.
-Independent regeneration, downstream interoperability, physical-device
-acceptance, fuzzing, side-channel assessment, formal proof, hosted 32-bit
-execution, a private security-reporting route, and production approval remain
-separate gates.
+the approved implementation. Independent regeneration is now reproducible (§3).
+Issue #7 remains open for named human review. Downstream interoperability,
+physical-device acceptance, fuzzing, side-channel assessment, formal proof,
+hosted 32-bit execution, a private security-reporting route, and production
+approval remain separate gates.
+
+## 11. Independent vector regeneration
+
+Status: **independent AI compatibility review complete; delivery pending**
+
+Final reports: `reviews/vmls1-41aa9db-claude.md`,
+`reviews/vmls1-41aa9db-codex.md`, and `reviews/vmls1-41aa9db-ai-review.md`.
+Claude recommended approve with findings; Codex recommended approve. Both found
+all correction classes resolved and no remaining compatibility defect. The final
+record also restores the historical 29,169 counts in sections 9 and 10 and adds
+the tombstone consistency assertion.
+
+`vectors/generate-vmls.mjs` is included and uses only Node.js built-ins and the
+independent reader's primitive stack, never Rust. It recomputes all expected
+fields and error outcomes for every published fixture family: envelope, binding,
+capability, derivations/records, lanes, device credentials, security design,
+witness requests, manifests, allocation forwarding, and the hostile corpus.
+Deterministic receipt, evidence, witness, and allocation signatures are
+recomputed from public fixture seeds. Receipt bodies, installations, slots,
+attempts, and envelope hashes are rebuilt from explicit scenario fields rather
+than signed unchanged. Witness bodies and evidence headers retain their
+scenario-provided values. Signed binding and capability inputs are retained and
+independently verified rather than regenerated.
+
+Run from the repository root with Node.js 20 or later:
+
+```sh
+node --check vectors/generate-vmls.mjs
+node vectors/generate-vmls.mjs
+```
+
+Expected result: `PASS 11 vector files regenerated; content and exact bytes
+match; negative control passed`. Default mode requires deep semantic equality
+and independently rendered source-byte equality for all 11 files. The renderer
+preserves pretty JSON, compact envelope/security cases, appended compact cases,
+full-`i64` numeric tokens, and single-line hostile code arrays. `--write` permits
+a deliberate versioned fixture change; it is not run by CI. BIP-340 credential
+signatures use random auxiliary data, so they are independently verified but not
+regenerated; that limitation is explicit and does not affect deterministic
+Ed25519 signatures.
+
+Negative controls require a trailing-byte envelope to change outcome and rendered
+bytes, prove that changing only an expected identity cannot influence validation,
+reject a changed retained public key, and require changed installation and attempt
+inputs to alter the rebuilt receipt. Write mode reports files written rather than
+compatibility equality. Importing `verify-vmls.mjs` as a library does not execute
+the suites. Direct execution resolves the entry path's real path and reports
+`PASS 11 suites, 29170 independent assertions`, including through a symlink.
+
+CI runs the reader and generator and asserts their PASS lines. Local verification
+also passed 53 Rust tests in each feature mode, both Rust toolchains,
+`thumbv7em-none-eabi`, Android and Linux 32-bit test compilation, formatting,
+dependency audit, all Appendix A hashes, workflow YAML parsing, and
+`git diff --check`.
+
+Next action: deliver the reviewed tooling and run post-merge CI. Downstream
+interoperability, physical-device acceptance, hosted 32-bit execution, and the
+other external gates remain open.

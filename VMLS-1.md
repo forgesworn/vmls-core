@@ -609,7 +609,7 @@ production.
 | `vmls-core/vectors/vmls-capability-v1.json` | 17 capability cases | `8bae8df6c0005e9daff2263561a5e4ac859e1a87a92af0792ff27cb5da3142ab` |
 | `vectors/device-credential.json` | 8 device-credential cases plus tombstone | `6db2ac7d9ba680dcc952028974bbe00ed6e69f9fe4054ea1ed12277c687f0f7e` |
 | `vmls-core/vectors/vmls-lane-v1.json` | all 48 lane inputs | `05ea8fb2a5090a677bbf0822e4448e8935616c735835b4a97738698286af131f` |
-| `vmls-core/vectors/vmls-security-design-v1.json` | receipts, evidence and precedence, fork derivations | `5899b9264115942bbcf82c6e88f2e7ba6ff834f5b6647dbf37da6b7a19f2645c` |
+| `vmls-core/vectors/vmls-security-design-v1.json` | receipts, evidence and precedence, fork derivations | `098e0a7449d9884490a3a94e77dee71e99691891d6f3d19b013b10ae1ea26da7` |
 | `vmls-core/vectors/vmls-witness-request-v1.json` | 13 witness-request cases | `75be62ea1ff27f6d503817d06dafe951da67fe50b21c2909844545d7d8eafb1f` |
 | `vmls-core/vectors/vmls-manifest-v1.json` | 12 manifest cases | `c969886c2d48ab51dd1ceb78d00462a49a9a2e31b6fc1ff96ed275efec5e0f57` |
 | `vmls-core/vectors/signer-allocation-witness-v1.json` | independently signed read and advance envelopes | `9cd6d7e48032bbece0b15a03b388a68bbe24217073dd38fd9fd614519d073d04` |
