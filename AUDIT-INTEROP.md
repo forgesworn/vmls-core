@@ -48,10 +48,10 @@ source revision. Re-run the relevant checks on the exact review candidate.
 
 - The VMLS/1 contract is a new source-derived draft and has not been
   independently approved.
-- Test comments identify `vectors/generate-vmls.mjs` and
-  `vectors/verify-vmls.mjs` as the independent producer and reader, but those
-  scripts are not included in this source repository. Independent regeneration
-  therefore cannot be reproduced from this checkout alone.
+- Test comments identify `vectors/generate-vmls.mjs` as the independent
+  producer, but that generator is not included in this source repository.
+  Independent reading is now reproducible; independent regeneration remains
+  open.
 - No independent security audit, coverage-guided fuzzing result, formal proof,
   or side-channel assessment is asserted.
 - No downstream interoperability or physical-device result is asserted.
@@ -108,6 +108,22 @@ regenerate fixtures merely to make a changed implementation pass.
 An independent runner MUST NOT obtain expected values from the Rust functions
 being tested. It may consume the published expected bytes, and should also
 recompute cryptographic values with an independent primitive stack.
+
+The checkout includes such a reader. From the repository root, with Node.js 20
+or later and no package installation:
+
+```sh
+node --check vectors/verify-vmls.mjs
+node vectors/verify-vmls.mjs
+```
+
+The expected final line is `PASS 11 suites, 29130 independent assertions`.
+The reader uses `node:crypto`, a separate canonical CBOR reader, and test-only
+BigInt secp256k1 arithmetic. It recomputes signatures, derivations, ECDH,
+sealed bytes, manifests and all hostile outcomes without calling Rust. Its
+arithmetic is not constant-time and is restricted to the public fixtures. This
+is reproducible implementation evidence, not named reviewer approval or an
+independent security audit.
 
 For every valid case:
 
@@ -275,7 +291,8 @@ this repository, so the product owner must supply acceptance thresholds.
 Before removing pre-release status or claiming production readiness:
 
 - [ ] The contract and vector compatibility policy have named reviewer approval.
-- [ ] Independent vector generation or reading is reproducible and all cases pass.
+- [x] Independent vector reading is reproducible and all published cases pass
+      (§3); independent regeneration remains open.
 - [ ] Security findings have severity, resolution, and regression evidence.
 - [ ] Each required downstream implementation has completed the matrix.
 - [ ] Physical-device results meet explicitly supplied budgets.
