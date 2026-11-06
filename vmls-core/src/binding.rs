@@ -387,6 +387,9 @@ impl LeafBinding {
     }
 
     /// The 32-byte message the device key signs with BIP-340.
+    ///
+    /// The caller MUST prevalidate a caller-constructed binding against contract
+    /// §6 before signing it; typed construction does not enforce the wire bounds.
     pub fn signing_digest(&self) -> [u8; 32] {
         Sha256::new()
             .chain_update(BINDING_SIGNATURE_TAG)
@@ -396,6 +399,10 @@ impl LeafBinding {
     }
 
     /// The one canonical encoding, also the LeafNode extension data.
+    ///
+    /// This does not validate caller-constructed fields. The caller MUST enforce
+    /// every contract §6 bound before emitting them; `Self::decode` can provide
+    /// structural prevalidation of the returned bytes.
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(1100);
         self.write_body(&mut out, BINDING_KEYS);

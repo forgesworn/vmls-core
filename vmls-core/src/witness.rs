@@ -72,6 +72,8 @@ impl ReadRequest {
 }
 
 impl AdvanceRequest {
+    /// Encodes a request. The caller MUST ensure `expected_seq` is strictly
+    /// below `MAX_SAFE_INTEGER`; `Self::parse` enforces this on untrusted bytes.
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(150);
         cbor::write_map(&mut out, 6);

@@ -55,6 +55,11 @@ pub struct VerifiedCapability {
 }
 
 impl CapabilityRecord {
+    /// Encodes a capability after checking the KeyPackage and binding sizes.
+    ///
+    /// Caller-constructed records MUST also satisfy every other contract §6 and
+    /// §7 bound, including timestamps and nested credential limits. A successful
+    /// `Self::decode` of the returned bytes provides structural prevalidation.
     pub fn encode(&self) -> Result<Vec<u8>, ErrorCode> {
         if self.key_package.is_empty() {
             return Err(ErrorCode::Empty);

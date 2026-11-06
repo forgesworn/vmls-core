@@ -211,6 +211,8 @@ impl WitnessReceipt {
         })
     }
 
+    /// Encodes a receipt. The caller MUST ensure `seq` is at most
+    /// `MAX_SAFE_INTEGER`; `Self::parse` enforces this on untrusted bytes.
     pub fn encode(&self) -> [u8; WITNESS_RECEIPT_BYTES] {
         let mut out = [0; WITNESS_RECEIPT_BYTES];
         out[..106].copy_from_slice(&self.signed_bytes());
