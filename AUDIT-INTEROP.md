@@ -317,3 +317,112 @@ Unresolved limitations and next action:
 
 No external reviewer has been contacted and no external publication has been
 performed as part of preparing this pack.
+
+## 8. Maintainer pre-review record: v0.1.2
+
+Status: **local maintainer pre-review complete; named independent review pending**
+
+- Review date: 2026-11-06.
+- Reviewed implementation: v0.1.2, commit
+  `6ffaafa3ebaee5bf81df5c6658faade0fe0420a8`.
+- Resulting tree: an uncommitted contract, review-record, and rustdoc patch on
+  that commit. No executable code, vector, dependency, or public API signature
+  changed. A reviewer must record the commit containing this patch separately.
+- Reviewer: Kimi Code CLI. This is source-backed maintainer pre-review, not an
+  independent security audit or named reviewer approval.
+- Resulting contract SHA-256:
+  `49a5c8b8cfe3f8b4cf7ec061a46099be3c4a00f97a6cec25baa0a86462f48268`.
+  All appendix A vector hashes matched the reviewed checkout.
+
+### 8.1 Checklist disposition
+
+- **Canonical parsing and resource bounds:** accepted within codec scope. The
+  envelope, CBOR, binding, capability, record, witness, receipt, evidence, and
+  allocation-forwarding paths enforce their stated lengths and canonical forms.
+  Seeded hostile inputs, every published truncation/bit-flip case, and accepted
+  re-encoding checks passed. This is not coverage-guided fuzzing or a formal
+  proof.
+- **Derivations and record protection:** accepted within codec scope. The
+  exporter inputs, HKDF-Extract/Expand distinction, domain strings, field order,
+  counters, key/nonce split, AAD, bucket selection, zero padding, and silent-drop
+  behaviour match the independent vectors. CSPRNG quality, replay-state timing,
+  secret erasure, and adapter logging remain integration checks.
+- **Bindings and credentials:** accepted within codec scope. NIP-01
+  serialisation, BIP-340 verification, carrying-leaf equality, required-tag,
+  identity, expiry/skew, revocation, device, and lifetime rules agree with the
+  vectors. Required-capabilities, leaf-id uniqueness, and the whole
+  capability/KeyPackage extension comparison remain adapter checks and were not
+  run here.
+- **Receipts, evidence, and forwarding:** accepted within codec scope. Strict
+  Ed25519 verification, weak/small-order rejection, signed bytes, challenges,
+  evidence ordering, method/domain separation, and bounded canonical request
+  parsing passed. Subject/status, session association, writer enrolment, atomic
+  token consumption, and uncertain store outcomes remain service checks.
+- **Lane safety:** accepted for the pure decision table; all 48 combinations
+  passed. Actual client conversation separation, draft behaviour, and wording
+  remain downstream UI/integration acceptance.
+- **Manifest:** accepted for canonical construction, typed-value hashing,
+  raw-byte key ordering, insertion-order independence, and duplicate refusal.
+  Schema coverage and storage reconciliation remain adapter checks.
+
+### 8.2 Finding and resolution
+
+**MRR-01 — Low, interoperability/API robustness:** caller-constructed
+`LeafBinding`, `CapabilityRecord`, `AdvanceRequest`, and `WitnessReceipt` values
+could be encoded without all decoder-enforced bounds being checked. In
+particular, nested binding credential limits, timestamps, and witness sequence
+limits were not uniformly validated by the typed encoders. The contract did not
+clearly assign the required prevalidation, allowing a caller to emit a
+non-conforming object despite using the provided API.
+
+Resolved locally without changing the wire format or public signatures:
+contract §2.1 now requires callers to enforce all applicable bounds before
+signing or emitting constructed values and permits a successful decode as
+structural prevalidation. Method-level rustdoc at the affected signing/encoding
+entry points states the same obligation. `ForwardedRequest::new` already
+performs the request-body round-trip check. The full compatibility suite below
+passed after this documentation resolution. Named review should confirm that
+caller prevalidation is acceptable; a checked or versioned API remains an
+alternative if it is not.
+
+No additional codec finding was identified in this pass. That is not evidence
+of absence, independent approval, side-channel assurance, or production
+readiness.
+
+### 8.3 Candidate verification
+
+Environment: macOS 14.6.1, Node.js v24.21.0, rustc 1.94.1; Rust 1.87.0 and the
+`thumbv7em-none-eabi` target were installed through rustup. All commands ran
+from the repository root on the resulting review tree:
+
+```sh
+node --check vectors/verify-vmls.mjs
+node vectors/verify-vmls.mjs
+cargo test --manifest-path vmls-core/Cargo.toml --locked
+cargo test --manifest-path vmls-core/Cargo.toml --no-default-features --locked
+cargo +1.87.0 check --manifest-path vmls-core/Cargo.toml --lib --locked
+cargo +1.87.0 check --manifest-path vmls-core/Cargo.toml --no-default-features --lib --locked
+cargo +1.94.1 check --manifest-path vmls-core/Cargo.toml --lib --locked
+cargo +1.94.1 check --manifest-path vmls-core/Cargo.toml --no-default-features --lib --locked
+cargo check --manifest-path vmls-core/Cargo.toml \
+  --no-default-features --target thumbv7em-none-eabi --lib --locked
+cargo fmt --manifest-path vmls-core/Cargo.toml --check
+cargo audit --file vmls-core/Cargo.lock
+git diff --check
+```
+
+Results: all passed. The Node reader reported 11 suites and 29,130 independent
+assertions. Each Rust feature mode reported 48 passed and zero failed, including
+doc-tests. The dependency audit scanned 71 locked dependencies and reported no
+vulnerability. `git diff --check` reported no whitespace error. Vector hashes
+were independently recomputed with Python SHA-256 and all matched appendix A.
+
+Downstream interoperability, independent regeneration, physical-device
+acceptance, coverage-guided fuzzing, side-channel assessment, and formal proof
+remain **not run**. No external reviewer was contacted during this local review.
+
+Next action: a named independent reviewer should review the exact commit
+containing this patch, confirm MRR-01's resolution, and record findings against
+sections 4 through 7. Downstream implementations can then execute the matrix in
+section 5; the product owner must supply device budgets before section 6 can be
+accepted.

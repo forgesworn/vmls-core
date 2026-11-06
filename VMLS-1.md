@@ -59,6 +59,16 @@ CBOR structures use the deterministic RFC 8949 subset implemented in
 
 An accepted CBOR object MUST re-encode to exactly its accepted bytes.
 
+Typed construction is not proof of conformance. The typed encoders for
+`LeafBinding`, `CapabilityRecord`, `AdvanceRequest`, and `WitnessReceipt` are
+not general validation APIs. Before signing or emitting a caller-constructed
+value, the caller MUST enforce every applicable bound in sections 6 through 9,
+including nested credential tag/text limits, timestamp ranges, and the witness
+sequence limit. A successful decode of the emitted bytes provides structural
+prevalidation; it does not replace signature verification or the adapter and
+service checks in section 15. `ForwardedRequest::new` performs this structural
+round-trip check for its request body.
+
 ### 2.2 Primitive profiles
 
 - Hashes and HKDF use SHA-256. HKDF follows RFC 5869.
