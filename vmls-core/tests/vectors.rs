@@ -1,6 +1,6 @@
 //! The published VMLS/1 known-answer suites, read by the Rust codecs.
-//! They are produced by `vectors/generate-vmls.mjs` with noble and
-//! node:crypto and read independently by `vectors/verify-vmls.mjs`.
+//! They are produced by `vectors/generate-vmls.mjs` with Node.js built-ins
+//! and read independently by `vectors/verify-vmls.mjs`.
 
 mod common;
 
