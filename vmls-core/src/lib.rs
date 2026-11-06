@@ -18,8 +18,9 @@
 //! - [`manifest`]: the canonical state manifest and its digest;
 //! - [`ErrorCode`]: stable, byte-free failure codes.
 //!
-//! The VMLS/1 transport contract is not yet published; the vectors in
-//! `vectors/` are the reference for every byte layout here.
+//! The source-derived VMLS/1 transport contract is in `VMLS-1.md` at the
+//! repository root; it remains a draft pending independent review. The vectors
+//! in `vectors/` are the compatibility fixtures for every byte layout here.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
