@@ -18,6 +18,15 @@ Every layout has known-answer vectors in `vmls-core/vectors/` and a bounded
 hostile-input suite. The device credential rules follow NIP-DEVICE-CREDENTIAL
 in [forgesworn/nip-drafts](https://github.com/forgesworn/nip-drafts).
 
+## Contract and review
+
+- [VMLS/1 transport contract](VMLS-1.md): the source-derived wire formats,
+  cryptographic derivations, verification rules, error codes and caller
+  obligations. This is a draft pending independent review.
+- [Audit and interoperability pack](AUDIT-INTEROP.md): the reproducible
+  baseline, independent vector procedures, security review checklist and
+  downstream/device acceptance gates.
+
 This repository is generated from ForgeSworn's working tree; changes are made
 there and copied here. Status: pre-release, not independently audited.
 
