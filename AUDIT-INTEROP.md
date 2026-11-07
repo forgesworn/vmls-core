@@ -812,3 +812,76 @@ run 42376715868 passed after the media-only recording job was rerun; post-merge
 CI run 42381466043 passed every job. The task branch is an ancestor of remote
 `main`. No deployment, production enablement or human security approval has
 occurred. Next: Box service.
+
+## 16. Box service baseline and dependency-audit gate
+
+Status: **six findings remediated; one residual non-shipping exception approved**
+
+The clean Bothy worktree is `bothy-node-vmls-interop-20261107` at
+`81b67c2ef1632862c58c2ce4c3f3ba2fa0337f3e`, on branch
+`feat/box-vmls-interop-20261107`. Its existing manifest pins VMLS core
+`0edf2501e526bfb35a342c10cc7b5932542dc2b7`. The unchanged 411-package combined
+baseline `Cargo.lock` had SHA-256
+`4bee0a1658cf38111e7c3230f87ad2742bb929d1c5d7ed6e73aaa0df34e69f44`.
+No dependency, implementation or test file had been edited at that baseline.
+
+The owner then authorised compatible remediation. Precise updates moved
+quinn-proto to 0.11.18, rustls-webpki to 0.103.16, webpki-root-certs and
+webpki-roots to 1.0.10. Only `Cargo.lock` changed; its 411-package SHA-256 is now
+`395473ce3f2c886cd5247dd32e4cc45a75cca472f9b8415b25bb61d9603bd130`.
+Cargo also normalised tempfile 3.27.0's existing dependency edge from getrandom
+0.4.3 to the already locked 0.3.4; no tempfile version changed. The full audit
+now clears the six QUIC/TLS findings and retains only `RUSTSEC-2026-0387`.
+A direct crypto-bigint 0.7.6 update fails without changing the lock because
+elliptic-curve 0.13.8 requires `crypto-bigint ^0.5`; 0.7.6 is also yanked. The
+current k256/p256 0.13 consumers therefore have no drop-in compatible fix. Their
+latest released line is 0.14.0, a broader migration not silently undertaken.
+The complete unignored output is `reviews/box-81b67c2-remediated-audit.txt`.
+The residual advisory describes secret-dependent timing variability in arithmetic
+and possible cryptographic-secret leakage, with practical exploitability depending
+on the downstream algorithm, compiler, target CPU and observer. That is not a
+Box-specific reachability finding. Against this remediated lock, all 21
+`bothy-link` VMLS tests and all nine explicit `bothyd --test vmls_two_daemons`
+cases pass. The previously failing witness-down case passed in this full parallel
+run. This is scoped VMLS evidence, not full workspace CI.
+
+The unmodified baseline passes all 21 `bothy-link` VMLS tests. The initial
+`cargo test -p bothyd vmls_two_daemons` name filter ran zero cases and is not
+counted as coverage. The explicit `--test vmls_two_daemons` target ran all nine:
+eight passed and `p2r07_with_the_witness_down_the_daemon_disable_holds` failed
+with `Db(VmlsPending)` at `crates/bothyd/tests/vmls_two_daemons.rs:882`. That
+case passed when rerun alone (one passed, eight filtered), so the full parallel
+suite is not green and the failure is concurrency-sensitive or intermittent;
+its root cause has not been established or changed. This is a scoped baseline,
+not full workspace CI.
+
+The pre-existing combined lock fails cargo audit with seven vulnerabilities:
+`RUSTSEC-2026-0387` (`crypto-bigint` 0.5.5), `RUSTSEC-2026-0343`,
+`RUSTSEC-2026-0338` and `RUSTSEC-2026-0340` (`quinn-proto` 0.11.17),
+`RUSTSEC-2026-0382` (`rustls-webpki` 0.103.15), `RUSTSEC-2026-0383`
+(`webpki-root-certs` 1.0.9) and `RUSTSEC-2026-0381` (`webpki-roots` 1.0.9).
+`libcrux-kem` is absent. Dependency tracing confirms crypto-bigint through the
+existing k256/elliptic-curve graph, quinn-proto through the pinned Link endpoint,
+rustls-webpki through the combined TLS graph, and webpki-roots through
+hyper-rustls; webpki-root-certs is target-specific and did not print in the
+default-host inverse tree. Those four patch updates have now been tested as
+recorded above; no drop-in compatible crypto-bigint remediation exists in the
+current 0.13 elliptic-curve consumer line.
+
+The owner-approved Vennel exception in §13 does **not** cover this lock. On
+7 November 2026 the owner accepted the residual-exception recommendation and
+approved a Box-only non-shipping exception for exactly `RUSTSEC-2026-0387` at
+lock SHA-256 `395473ce3f2c886cd5247dd32e4cc45a75cca472f9b8415b25bb61d9603bd130`.
+The unignored audit still fails with that one vulnerability. The audit ignoring
+only that ID succeeds, with all five warnings still visible; raw output is
+`reviews/box-81b67c2-approved-ignore-audit.txt`. No other advisory or warning is
+ignored or approved by this exception.
+
+The exception permits local/hosted testing, implementation, independent review
+and PR evaluation only. It grants no deployment, shipping, production-use or
+production-MLS approval. Any changed lock, dependency, feature, target or flag,
+or newly demonstrated reachable affected operation, requires a new disposition.
+Closure requires migrating every affected consumer to a fixed crypto-bigint line
+and passing the full unignored audit; production acceptance remains a separate
+owner/security gate. Upstream Box `main` advanced during this work and must be
+integrated and retested before a PR.

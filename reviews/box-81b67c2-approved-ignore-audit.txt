@@ -1,0 +1,229 @@
+    Fetching advisory database from `https://github.com/RustSec/advisory-db.git`
+      Loaded 1422 security advisories (from local cargo advisory-db)
+    Updating crates.io index
+    Scanning Cargo.lock for vulnerabilities (411 crate dependencies)
+Crate:     basic-toml
+Version:   0.1.10
+Warning:   unmaintained
+Title:     `basic-toml` is unmaintained
+Date:      2026-09-26
+ID:        RUSTSEC-2026-0374
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0374
+Dependency tree:
+basic-toml 0.1.10
+└── askama_derive 0.13.1
+    └── askama 0.13.1
+        └── uniffi_bindgen 0.29.5
+            └── uniffi 0.29.5
+                └── bothy-ffi 0.1.0
+
+Crate:     faster-hex
+Version:   0.10.0
+Warning:   unsound
+Title:     `hex_decode_unchecked` AVX2 path reads past `src`
+Date:      2026-09-20
+ID:        RUSTSEC-2026-0306
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0306
+Dependency tree:
+faster-hex 0.10.0
+├── nostr-sdk 0.45.2
+│   ├── nostr-connect 0.45.1
+│   │   └── bothy-runtime 0.1.0
+│   │       ├── bothyd 0.1.0
+│   │       └── bothy-ffi 0.1.0
+│   ├── bothy-runtime 0.1.0
+│   └── bothy-link 0.1.0
+│       ├── bothyd 0.1.0
+│       ├── bothy-runtime 0.1.0
+│       └── bothy-ffi 0.1.0
+└── nostr 0.45.4
+    ├── shelter-kit 0.5.3
+    │   ├── link-blossom 0.1.0
+    │   │   ├── bothyd 0.1.0
+    │   │   ├── bothy-runtime 0.1.0
+    │   │   ├── bothy-link 0.1.0
+    │   │   └── bothy-ffi 0.1.0
+    │   ├── bothyd 0.1.0
+    │   ├── bothy-runtime 0.1.0
+    │   ├── bothy-link 0.1.0
+    │   ├── bothy-ffi 0.1.0
+    │   └── bothy-core 0.1.0
+    │       ├── bothyd 0.1.0
+    │       ├── bothy-runtime 0.1.0
+    │       ├── bothy-link 0.1.0
+    │       └── bothy-ffi 0.1.0
+    ├── nostr-sdk 0.45.2
+    ├── nostr-memory 0.45.1
+    │   └── nostr-sdk 0.45.2
+    ├── nostr-gossip 0.45.0
+    │   └── nostr-sdk 0.45.2
+    ├── nostr-database 0.45.1
+    │   ├── nostr-sdk 0.45.2
+    │   └── nostr-memory 0.45.1
+    ├── nostr-connect 0.45.1
+    ├── bothyd 0.1.0
+    ├── bothy-runtime 0.1.0
+    ├── bothy-link 0.1.0
+    ├── bothy-ffi 0.1.0
+    ├── bothy-core 0.1.0
+    └── bothy-cadence-worker 0.1.0
+        └── bothyd 0.1.0
+
+Crate:     lru
+Version:   0.16.4
+Warning:   unsound
+Title:     Potential use-after-free due to lack of panic safety in `LruCache::pop()`
+Date:      2026-05-12
+ID:        RUSTSEC-2026-0253
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0253
+Dependency tree:
+lru 0.16.4
+└── rqrr 0.10.1
+    └── bothyd 0.1.0
+
+Crate:     tokio
+Version:   1.53.1
+Warning:   unsound
+Title:     `AsyncFd::new` and related constructors violate I/O safety
+Date:      2026-10-13
+ID:        RUSTSEC-2026-0386
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0386
+Dependency tree:
+tokio 1.53.1
+├── tower 0.5.3
+│   ├── tower-http 0.6.11
+│   │   └── reqwest 0.13.4
+│   │       └── shelter-kit 0.5.3
+│   │           ├── link-blossom 0.1.0
+│   │           │   ├── bothyd 0.1.0
+│   │           │   ├── bothy-runtime 0.1.0
+│   │           │   │   ├── bothyd 0.1.0
+│   │           │   │   └── bothy-ffi 0.1.0
+│   │           │   ├── bothy-link 0.1.0
+│   │           │   │   ├── bothyd 0.1.0
+│   │           │   │   ├── bothy-runtime 0.1.0
+│   │           │   │   └── bothy-ffi 0.1.0
+│   │           │   └── bothy-ffi 0.1.0
+│   │           ├── bothyd 0.1.0
+│   │           ├── bothy-runtime 0.1.0
+│   │           ├── bothy-link 0.1.0
+│   │           ├── bothy-ffi 0.1.0
+│   │           └── bothy-core 0.1.0
+│   │               ├── bothyd 0.1.0
+│   │               ├── bothy-runtime 0.1.0
+│   │               ├── bothy-link 0.1.0
+│   │               └── bothy-ffi 0.1.0
+│   ├── reqwest 0.13.4
+│   ├── bothyd 0.1.0
+│   ├── bothy-runtime 0.1.0
+│   ├── bothy-link 0.1.0
+│   ├── bothy-core 0.1.0
+│   └── axum 0.8.9
+│       ├── shelter-kit 0.5.3
+│       ├── bothyd 0.1.0
+│       ├── bothy-runtime 0.1.0
+│       ├── bothy-link 0.1.0
+│       └── bothy-core 0.1.0
+├── tokio-util 0.7.19
+│   ├── tokio-stream 0.1.19
+│   │   └── nostr-sdk 0.45.2
+│   │       ├── nostr-connect 0.45.1
+│   │       │   └── bothy-runtime 0.1.0
+│   │       ├── bothy-runtime 0.1.0
+│   │       └── bothy-link 0.1.0
+│   ├── shelter-kit 0.5.3
+│   └── reqwest 0.13.4
+├── tokio-tungstenite 0.29.0
+│   ├── bothyd 0.1.0
+│   ├── bothy-runtime 0.1.0
+│   ├── bothy-link 0.1.0
+│   ├── bothy-cadence-worker 0.1.0
+│   │   └── bothyd 0.1.0
+│   └── axum 0.8.9
+├── tokio-tungstenite 0.28.0
+│   └── async-wsocket 0.17.0
+│       └── nostr-sdk 0.45.2
+├── tokio-tungstenite 0.24.0
+│   ├── link-relay 0.1.0
+│   │   ├── bothyd 0.1.0
+│   │   ├── bothy-runtime 0.1.0
+│   │   └── bothy-link 0.1.0
+│   └── link-endpoint 0.1.0
+│       ├── link-blossom 0.1.0
+│       ├── bothyd 0.1.0
+│       ├── bothy-runtime 0.1.0
+│       ├── bothy-link 0.1.0
+│       └── bothy-ffi 0.1.0
+├── tokio-stream 0.1.19
+├── tokio-socks 0.5.3
+│   └── async-wsocket 0.17.0
+├── tokio-rustls 0.26.4
+│   ├── tokio-tungstenite 0.29.0
+│   ├── tokio-tungstenite 0.28.0
+│   ├── reqwest 0.13.4
+│   ├── link-relay 0.1.0
+│   ├── link-endpoint 0.1.0
+│   ├── hyper-rustls 0.27.9
+│   │   ├── reqwest 0.13.4
+│   │   └── bothy-link 0.1.0
+│   ├── bothyd 0.1.0
+│   └── async-wsocket 0.17.0
+├── tokio-happy-eyeballs 0.1.0
+│   └── async-wsocket 0.17.0
+├── shelter-kit 0.5.3
+├── reqwest 0.13.4
+├── quinn 0.11.11
+│   └── link-endpoint 0.1.0
+├── nostr-sdk 0.45.2
+├── nostr-memory 0.45.1
+│   └── nostr-sdk 0.45.2
+├── nostr-connect 0.45.1
+├── link-relay 0.1.0
+├── link-endpoint 0.1.0
+├── link-blossom 0.1.0
+├── hyper-util 0.1.20
+│   ├── reqwest 0.13.4
+│   ├── hyper-rustls 0.27.9
+│   ├── bothyd 0.1.0
+│   ├── bothy-link 0.1.0
+│   ├── bothy-core 0.1.0
+│   └── axum 0.8.9
+├── hyper-rustls 0.27.9
+├── hyper 1.11.1
+│   ├── reqwest 0.13.4
+│   ├── hyper-util 0.1.20
+│   ├── hyper-rustls 0.27.9
+│   ├── bothyd 0.1.0
+│   ├── bothy-runtime 0.1.0
+│   ├── bothy-link 0.1.0
+│   ├── bothy-ffi 0.1.0
+│   ├── bothy-core 0.1.0
+│   └── axum 0.8.9
+├── bothyd 0.1.0
+├── bothy-runtime 0.1.0
+├── bothy-link 0.1.0
+├── bothy-ffi 0.1.0
+├── bothy-core 0.1.0
+├── bothy-cadence-worker 0.1.0
+├── axum 0.8.9
+├── async-wsocket 0.17.0
+└── async-utility 0.3.2
+    ├── nostr-sdk 0.45.2
+    └── nostr-connect 0.45.1
+
+Crate:     nostr-sdk
+Version:   0.45.2
+Warning:   yanked
+Dependency tree:
+nostr-sdk 0.45.2
+├── nostr-connect 0.45.1
+│   └── bothy-runtime 0.1.0
+│       ├── bothyd 0.1.0
+│       └── bothy-ffi 0.1.0
+├── bothy-runtime 0.1.0
+└── bothy-link 0.1.0
+    ├── bothyd 0.1.0
+    ├── bothy-runtime 0.1.0
+    └── bothy-ffi 0.1.0
+
+warning: 5 allowed warnings found
