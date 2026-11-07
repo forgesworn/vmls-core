@@ -923,8 +923,16 @@ OPSEC, formatting and clippy passed in the full local sequence. The standard
 green. The first run failed one event-writer batching assertion after 730 core
 passes; that case passed alone. The second and third failed the event-relay
 pipelined-burst assertion after 298 link passes (72 and 83 batches respectively);
-that case also passed alone. These unrelated timing/concurrency failures are not
-hidden or relabelled, and no unrelated source fix was attempted. Documentation
-and deploy-unit gates were not reached by those runs. A serial workspace run is
-supplemental diagnostic evidence only, not a substitute for the failed standard
-command. A PR awaits the owner's disposition of this full-suite limitation.
+that case also passed alone. The supplemental serial workspace run passed all
+731 core cases but failed the same event-relay assertion after 298 link passes
+(88 batches), so it is not a clean workaround or a substitute for the standard
+command. These timing/concurrency failures are not hidden or relabelled, and no
+unrelated source fix was attempted. Their root cause and an unmodified-baseline
+reproduction remain unestablished.
+
+The separately run `cargo doc --no-deps` succeeds with existing rustdoc warnings.
+The deploy script passes its cadence isolation check; `systemd-analyze` is
+unavailable on this host, and no container image was supplied, so those two
+checks were skipped rather than claimed. OPSEC, formatting, clippy and all 127
+scoped VMLS cases pass. The full workspace gate remains red, and a PR awaits the
+owner's disposition of this limitation.
