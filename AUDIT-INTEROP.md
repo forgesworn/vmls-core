@@ -904,3 +904,27 @@ ID succeeds with all five warnings still visible; raw output is
 `reviews/box-d9a8d24-approved-ignore-audit.txt`. All scope, invalidation and
 closure conditions above apply unchanged. No deployment, shipping, production
 use or production MLS enablement is approved.
+
+Initial independent Claude and Codex reviews at Box `82b9f88` both returned
+**OPEN PR** with no blocking findings: `reviews/box-82b9f88-claude.md` and
+`reviews/box-82b9f88-codex.md`. Claude identified a pre-existing structural path
+from Link rendezvous ECDH to ephemeral or Nostr secret scalars at
+`crates/bothy-link/src/material.rs:136`, `:353`, `:361` and `:370`. Neither
+review demonstrated that this path exercises the advisory's specific affected
+arithmetic, and the candidate does not introduce or widen it. This is exposure
+precision, not a newly demonstrated affected operation or production clearance.
+The follow-up `8cbb58a` corrects three stale pin references and the k256/p256
+comment without changing the lock. Targeted Claude and Codex re-reviews both
+returned **OPEN PR** with no new issues: `reviews/box-8cbb58a-claude.md` and
+`reviews/box-8cbb58a-codex.md`.
+
+OPSEC, formatting and clippy passed in the full local sequence. The standard
+`cargo test --workspace --locked` command was attempted three times and is not
+green. The first run failed one event-writer batching assertion after 730 core
+passes; that case passed alone. The second and third failed the event-relay
+pipelined-burst assertion after 298 link passes (72 and 83 batches respectively);
+that case also passed alone. These unrelated timing/concurrency failures are not
+hidden or relabelled, and no unrelated source fix was attempted. Documentation
+and deploy-unit gates were not reached by those runs. A serial workspace run is
+supplemental diagnostic evidence only, not a substitute for the failed standard
+command. A PR awaits the owner's disposition of this full-suite limitation.
