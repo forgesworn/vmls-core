@@ -257,7 +257,7 @@ turn a compile or unit-test pass into an end-to-end pass.
 |---|---|---|---|---|
 | Rust reference | baseline pass; rerun on candidate | not applicable | baseline hostile suite | local/CI logs |
 | Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
-| Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | KithMoot `99963f86`; Vennel `517dfd4`; §§13–14; non-shipping exception approved; PR CI pending |
+| Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | KithMoot `99963f86`, PR #731; Vennel `517dfd4`, PR #351; §§13–14; hosted CI running |
 | Android | pending | pending | pending | reviewer to supply |
 | Box service | pending | pending | pending | reviewer to supply |
 | Firmware/allocation service | pending | pending | pending | reviewer to supply |
@@ -638,14 +638,14 @@ Heartwood. Witness and allocation forwarding have host-fixture coverage, not a
 live external service or deployment test. Detailed evidence is in Heartwood's
 `docs/2026-10-11-allocation-strict-history.md` and the PR 272 CI logs.
 
-Next action: complete fresh Browser delivery reviews and hosted PR CI under the
-approved non-shipping exception (§13), then make separate merge decisions.
-Physical-device acceptance, the remaining downstream implementations, and all
-other separate assurance gates remain open.
+Next action: complete hosted PR CI under the approved non-shipping exception
+(§13), then make separate merge decisions. Physical-device acceptance, the
+remaining downstream implementations, and all other separate assurance gates
+remain open.
 
 ## 13. Browser upstream candidate and dependency disposition
 
-Status: **code/review findings resolved locally; owner-approved non-shipping exception recorded; fresh delivery review and PR CI pending**
+Status: **final Claude/Codex delivery reviews approve opening PR #351; hosted CI running; merge not decided**
 
 The Browser engine source is Vennel `c154087ecfc43ee9404fa4d548cdc94c0789afef`,
 including `9ceaf3317ed2fd28f0abb4073dfd4e4e6258c6ab`. It synchronises the shared
@@ -689,9 +689,23 @@ and shipping remain separate gates. Any new advisory, changed lock, provider,
 feature, target or flag, enabled draft/hybrid/other ciphersuite, or newly
 demonstrated reachable affected operation requires a new disposition.
 
+Final read-only Claude and Codex reviews of `517dfd4` both returned **OPEN PR**
+with no blocking findings: `reviews/vennel-517dfd4-claude.md` and
+`reviews/vennel-517dfd4-codex.md`. They independently confirmed the corrected
+exposure scope, lock/source immutability, raw and approved-ignore audit results,
+SBOM caveat and CI triggers. Earlier review rounds are retained as
+`reviews/vennel-db669f9-{claude,codex}.md`. Claude's remaining non-blocking
+notes concern optional-dependency wording and explicit raw command/exit-code
+capture; a separate Bothy discovery lock is outside this exception and was not
+changed. These are AI reviews only, not human, merge, security or production
+approval. Vennel's pre-push hook reran the full `npm run check` successfully.
+[PR #351](https://github.com/forgesworn/vennel/pull/351) is open at the exact
+reviewed commit; Profile checks run 42352905770 and Android bundle run
+42352905624 are in progress.
+
 ## 14. KithMoot Browser scoped interoperability
 
-Status: **scoped local interoperability pass; non-shipping exception approved; fresh delivery review and PR CI pending; complete acceptance not run**
+Status: **final Claude/Codex delivery reviews approve opening PR #731; hosted CI running; complete acceptance not run**
 
 KithMoot delivery commit `99963f862c12a9a494af054d923267fd103212ea` records
 the dependency disposition and complete closure triggers. It adds documentation
@@ -730,5 +744,12 @@ The exception in §13 permits PR review and hosted CI despite the retained
 consumer vulnerabilities; it grants no merge, deployment or production approval.
 Claude and Codex confirm all earlier implementation findings resolved with no
 new findings in `reviews/kithmoot-d358f0e8-claude.md` and
-`reviews/kithmoot-d358f0e8-codex.md`; they are AI reviews only. Fresh reviews of
-the exact delivery commits and hosted PR results are pending.
+`reviews/kithmoot-d358f0e8-codex.md`. Final read-only reviews of `99963f86`
+both returned **OPEN PR** in `reviews/kithmoot-99963f86-claude.md` and
+`reviews/kithmoot-99963f86-codex.md`; the earlier closure-list note is resolved
+and no blocking finding remains. Earlier delivery rounds are retained as
+`reviews/kithmoot-34f0b3b4-{claude,codex}.md`. These are AI reviews only, not
+human, merge, security or production approval.
+[PR #731](https://github.com/forgesworn/kithmoot/pull/731) is open at the exact
+reviewed commit; main CI run 42352922016 and the actual-suite run 42352922074
+are in progress.
