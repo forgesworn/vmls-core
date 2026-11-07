@@ -897,6 +897,10 @@ warnings; raw output is `reviews/box-d9a8d24-candidate-audit.txt`. Against that
 exact candidate, 97 core VMLS tests, 21 link VMLS tests and all nine explicit
 two-daemon cases pass, including the previously intermittent witness-down case.
 Formatting and diff checks pass. The dependency remediation is rebased onto Box
-`main` `7510db5`; this is scoped evidence, not full workspace CI. The changed
-lock is outside the exact exception above and requires a fresh owner disposition
-before independent review or a PR.
+`main` `7510db5`; this is scoped evidence, not full workspace CI. On 7 November
+2026 the owner explicitly approved the same exception for only
+`RUSTSEC-2026-0387` at this exact candidate lock. The audit ignoring only that
+ID succeeds with all five warnings still visible; raw output is
+`reviews/box-d9a8d24-approved-ignore-audit.txt`. All scope, invalidation and
+closure conditions above apply unchanged. No deployment, shipping, production
+use or production MLS enablement is approved.
