@@ -815,7 +815,7 @@ occurred. Next: Box service.
 
 ## 16. Box service baseline and dependency-audit gate
 
-Status: **PR #161 open with documented local test limitation; hosted CI pending**
+Status: **PR #161 open; hosted CI and Android passed; merge decision pending**
 
 The clean Bothy worktree is `bothy-node-vmls-interop-20261107` at
 `81b67c2ef1632862c58c2ce4c3f3ba2fa0337f3e`, on branch
@@ -941,5 +941,9 @@ disclosed in the PR and is not a passed-check claim. [PR #161]
 (https://github.com/forgesworn/bothy-node/pull/161) is open at `8cbb58a` with the
 failures, scoped evidence, exception and deployment limits in its body. Hosted
 CI run 42397634349 and Android run 42397637394 were manually dispatched at that
-exact commit and are pending. Merge requires green hosted gates and a separate
-owner decision; no deployment or production approval exists.
+exact commit and both completed successfully. Android passed both jobs,
+including the G3 size gate and debug assembly/unit tests. Hosted CI passed every
+enabled job, including `cargo test --workspace --locked`; its disabled deploy-image
+job was skipped by configuration. These hosted Linux successes do not erase the
+local macOS failures or establish their root cause. PR #161 remains open pending
+the owner's separate merge decision; no deployment or production approval exists.
