@@ -258,7 +258,7 @@ turn a compile or unit-test pass into an end-to-end pass.
 | Rust reference | baseline pass; rerun on candidate | not applicable | baseline hostile suite | local/CI logs |
 | Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
 | Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | merged: Vennel `feea45f`, KithMoot `3d5acf7`; PR and post-merge CI passed; §§13–14 |
-| Android | pending | pending | pending | reviewer to supply |
+| Android | pass (local, scoped): 684 protocol and 3,386 app tests plus one skip; 23 emulator tests | pass (local): 38 framed Kotlin reader cases; other exchanges are host/FFI fixtures | pass (local, scoped): session/commit-slot/vault/restart fixtures; live-box join lab and production revocation not covered | candidate `2e56e3cc`; PR #399 CI running; §15 |
 | Box service | pending | pending | pending | reviewer to supply |
 | Firmware/allocation service | pending | pending | pending | reviewer to supply |
 
@@ -760,3 +760,52 @@ passed every job, including browser regressions, acceptance, protected startup
 and call/media coverage; Combined realtime adapter run 42356022613 also passed.
 The task branch is an ancestor of remote `main`. No deployment or production
 approval was given.
+
+## 15. Android scoped VMLS interoperability
+
+Status: **candidate `2e56e3cc` reviewed; prerelease published; PR #399 CI running**
+
+Android PR [#399](https://github.com/forgesworn/kithmoot-android/pull/399)
+pins Vennel `feea45fc4ca172b05ea671579df51e936c5804b6`, the merged VMLS 0.1.2
+revision on `main`, and the standalone `1c0adec` binding fixture. The hosted
+Android bundle run 42355481980 supplies archive SHA-256
+`0de096b79e7ef3a7d98c97dac74ea0582d5b1856d8bdb8d646d911b82aceaa26`, with
+`manifest.json` `7ae7edf6658ba386cc4cd3ece43877b7e6ab970e69f2922de505f7b16385a946`
+and `manifest.txt` `ce443a3d85d8baf01eb2dc390bb9bb9ec04aa16ac86512c2cd4d262d3ce6b3d0`.
+The public [`vmls-ffi-android-feea45f` prerelease](https://github.com/forgesworn/kithmoot-android/releases/tag/vmls-ffi-android-feea45f)
+is published and its fetch/prepare path passes all five checks. Generated Kotlin
+is byte-identical between local and hosted builds; native binaries differ, so
+the hosted archive is the pinned hand-off. The detailed record is Android's
+`docs/2026-11-07-android-vmls-interop.md`.
+
+Local checks pass: 684 protocol tests with no failures/errors/skips; 3,386 app
+tests with one skip and no failures/errors; all 38 framed independent Kotlin
+reader cases; all five prepared-bundle forge/refusal checks; and both debug and
+instrumentation builds, including the explicitly selected Admin2 profile. The
+five unframed cases are counted and covered by synthetic framing checks, not
+independent exchanges. Four framed leaf-mismatch/signature cases assert unsigned
+decode success only. Android 15 arm64 Google APIs emulator tests pass 19
+session/driver/coordinated-vault cases plus two coordinated-vault restarts and
+two session restarts, 23 in total. This is not GrapheneOS evidence.
+
+Final read-only Claude and Codex reviews at `2e56e3cc` both returned **OPEN PR**
+with no confirmed issues: `reviews/android-2e56e3cc-claude.md` and
+`reviews/android-2e56e3cc-codex.md`. Earlier implementation/review rounds at
+`98829b71`, `8b9fe70` and `3d4aadf8` are retained. These are AI reviews only,
+not human, merge, security or production approval.
+
+`EngineJoin` and `VmlsRuntime` pass the current platform through capability
+opening and pending-introduction completion. Inspection passes the vault's
+current revoked IDs, and `admissible` takes the platform explicitly. Existing
+`EngineSessions` still uses the empty-revocation-list constructor and no
+production caller writes `revokeCredential`, so both inspection and native
+capability revocation enforcement lack production coverage. `admissible`,
+`addJoins` and `openCapability` have compile-time evidence only; the live-box
+join lab was not run. Reading the vault before inspection can surface
+`JoinRefusedException` before the native inspection error that previously led.
+
+No two-emulator/live-box lab, public relay, independent live mailbox/witness/
+allocation service, physical device or independent second-person end-to-end
+exchange is claimed. Lint and release build remain pending in hosted CI. No
+merge, deployment, production enablement or human security approval has
+occurred. Next after merge and post-merge CI: Box service.
