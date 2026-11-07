@@ -258,7 +258,7 @@ turn a compile or unit-test pass into an end-to-end pass.
 | Rust reference | baseline pass; rerun on candidate | not applicable | baseline hostile suite | local/CI logs |
 | Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
 | Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | merged: Vennel `feea45f`, KithMoot `3d5acf7`; PR and post-merge CI passed; §§13–14 |
-| Android | pass (local, scoped): 684 protocol and 3,386 app tests plus one skip; 23 emulator tests | pass (local): 38 framed Kotlin reader cases; other exchanges are host/FFI fixtures | pass (local, scoped): session/commit-slot/vault/restart fixtures; live-box join lab and production revocation not covered | candidate `2e56e3cc`; PR #399 CI running; §15 |
+| Android | pass (local, scoped): 684 protocol and 3,386 app tests plus one skip; 23 emulator tests | pass (local): 38 framed Kotlin reader cases; other exchanges are host/FFI fixtures | pass (local, scoped): session/commit-slot/vault/restart fixtures; live-box join lab and production revocation not covered | merged `6deaaca`; PR and post-merge CI passed; §15 |
 | Box service | pending | pending | pending | reviewer to supply |
 | Firmware/allocation service | pending | pending | pending | reviewer to supply |
 
@@ -763,7 +763,7 @@ approval was given.
 
 ## 15. Android scoped VMLS interoperability
 
-Status: **candidate `2e56e3cc` reviewed; prerelease published; PR #399 CI running**
+Status: **merged at `6deaaca`; prerelease published; PR and post-merge CI passed**
 
 Android PR [#399](https://github.com/forgesworn/kithmoot-android/pull/399)
 pins Vennel `feea45fc4ca172b05ea671579df51e936c5804b6`, the merged VMLS 0.1.2
@@ -806,6 +806,9 @@ join lab was not run. Reading the vault before inspection can surface
 
 No two-emulator/live-box lab, public relay, independent live mailbox/witness/
 allocation service, physical device or independent second-person end-to-end
-exchange is claimed. Lint and release build remain pending in hosted CI. No
-merge, deployment, production enablement or human security approval has
-occurred. Next after merge and post-merge CI: Box service.
+exchange is claimed. PR #399 merged as
+`6deaaca258ef276470841b03a0157fc0131c5046` on 7 November 2026. Its full PR
+run 42376715868 passed after the media-only recording job was rerun; post-merge
+CI run 42381466043 passed every job. The task branch is an ancestor of remote
+`main`. No deployment, production enablement or human security approval has
+occurred. Next: Box service.
