@@ -815,7 +815,7 @@ occurred. Next: Box service.
 
 ## 16. Box service baseline and dependency-audit gate
 
-Status: **six findings remediated; one residual non-shipping exception approved**
+Status: **PR #161 open with documented local test limitation; hosted CI pending**
 
 The clean Bothy worktree is `bothy-node-vmls-interop-20261107` at
 `81b67c2ef1632862c58c2ce4c3f3ba2fa0337f3e`, on branch
@@ -934,5 +934,12 @@ The separately run `cargo doc --no-deps` succeeds with existing rustdoc warnings
 The deploy script passes its cadence isolation check; `systemd-analyze` is
 unavailable on this host, and no container image was supplied, so those two
 checks were skipped rather than claimed. OPSEC, formatting, clippy and all 127
-scoped VMLS cases pass. The full workspace gate remains red, and a PR awaits the
-owner's disposition of this limitation.
+scoped VMLS cases pass. The full workspace gate remains red. The owner explicitly
+approved opening a PR with this limitation. The pre-push hook failed on the same
+event-relay assertion, so the branch was pushed with `--no-verify`; this bypass is
+disclosed in the PR and is not a passed-check claim. [PR #161]
+(https://github.com/forgesworn/bothy-node/pull/161) is open at `8cbb58a` with the
+failures, scoped evidence, exception and deployment limits in its body. Hosted
+CI run 42397634349 and Android run 42397637394 were manually dispatched at that
+exact commit and are pending. Merge requires green hosted gates and a separate
+owner decision; no deployment or production approval exists.
