@@ -257,7 +257,7 @@ turn a compile or unit-test pass into an end-to-end pass.
 |---|---|---|---|---|
 | Rust reference | baseline pass; rerun on candidate | not applicable | baseline hostile suite | local/CI logs |
 | Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
-| Browser | pending | pending | pending | reviewer to supply |
+| Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | KithMoot `d358f0e8`; §§13–14; PR blocked by consumer findings |
 | Android | pending | pending | pending | reviewer to supply |
 | Box service | pending | pending | pending | reviewer to supply |
 | Firmware/allocation service | pending | pending | pending | reviewer to supply |
@@ -638,6 +638,78 @@ Heartwood. Witness and allocation forwarding have host-fixture coverage, not a
 live external service or deployment test. Detailed evidence is in Heartwood's
 `docs/2026-10-11-allocation-strict-history.md` and the PR 272 CI logs.
 
-Next action: run Browser interoperability after its checkout is authorised.
-Physical-device acceptance, the remaining downstream implementations, and all
-other separate assurance gates remain open.
+Next action: obtain owner disposition or compatible remediation for the Browser
+consumer vulnerabilities before PR/merge. Physical-device acceptance, the
+remaining downstream implementations, and all other separate assurance gates
+remain open.
+
+## 13. Browser upstream candidate and dependency gate
+
+Status: **code/review findings resolved locally; PR blocked by consumer vulnerabilities**
+
+The Browser engine candidate is Vennel `c154087ecfc43ee9404fa4d548cdc94c0789afef`,
+including `9ceaf3317ed2fd28f0abb4073dfd4e4e6258c6ab`. It synchronises the shared
+codec/vector revision `1c0adec` while retaining Vennel-only invitation/admin
+modules and record variants. All 11 shared input files regenerate byte-identically;
+both core feature modes pass 61 tests each, both Rust 1.87 library modes pass,
+full `npm run check` passes, and 28 native/WASM adapter tests pass. The dependency
+graph target matrix and both design-generator negative controls pass.
+
+Claude and Codex independently confirm that the earlier implementation and
+review-evidence findings are resolved. Their reports are
+`reviews/vennel-c154087-claude.md` and `reviews/vennel-c154087-codex.md`. This is
+AI review only, not human, production or dependency-exception approval.
+
+A fresh cargo-audit run (1,422 advisories) reports no issue in the 71-package
+core lock. Every consumer lock reports `RUSTSEC-2026-0387` through the retained
+OpenMLS `crypto-bigint` 0.5.5 line and `RUSTSEC-2026-0330`/`RUSTSEC-2026-0331`
+through `libcrux-kem` 0.0.9. Each consumer lock gains 12 packages for the new
+`k256` 0.14 line, but the direct 0.7.6 minimum does not remediate the older
+OpenMLS line. The vulnerabilities are outside the existing `RUSTSEC-2026-0173`
+maintenance-warning exception and **block PR/merge pending owner disposition or
+compatible remediation**. Raw outputs are `reviews/vennel-c154087-vmls-core-audit.txt`,
+`reviews/vennel-c154087-vmls-mls-audit.txt`,
+`reviews/vennel-c154087-vmls-ffi-audit.txt` and
+`reviews/vennel-c154087-vmls-wasm-audit.txt`; all shared input hashes are in
+`reviews/vennel-c154087-vector-hashes.txt`. Vennel's implementation contract,
+dependency exception and regenerated SBOM record the exact graph and limits.
+
+## 14. KithMoot Browser scoped interoperability
+
+Status: **scoped local interoperability pass; complete acceptance and PR/merge not run**
+
+KithMoot commit `d358f0e873dfc2f35f0785c2718d0af7bb218645` (including
+`397f3f9308f8b9432220ec700c52c8696d46a76c`, `c0e4c662` and `2be3a38`) pins the Vennel
+`c154087` browser engine and standalone `1c0adec` binding fixture. The manifest,
+loader and generated assets agree. The detailed run record is KithMoot's
+`docs/2026-11-07-browser-vmls-interop.md`.
+
+Local KithMoot checks pass: 44 TypeScript binding tests; 8,942 unit tests with
+eight skipped and one file skipped; all 623 Chromium and all 623 Firefox MLS
+cases; all 623 WebKit cases in the exact pinned Playwright CI container; four
+app lifecycle/production-gate cases; typecheck; production build; and
+`npm audit --omit=dev`. The one-hour combined Chromium/Firefox process timed out
+only after all 1,246 cases had passed. Host WebKit fails during page creation
+with `Unknown setting: PushAPIEnabled`, identically on the unmodified baseline;
+the passing WebKit result comes from the pinned container, not the host.
+
+The independent cross-implementation exchange is the TypeScript/Rust binding
+fixture. Capability/Welcome, retry/replay, commit slots, witness transitions,
+allocation forwarding and manifest restore have scoped vector/WASM/browser
+fixture coverage. Production `Platform` construction omits revoked credential
+IDs, so the new tombstone gating cannot fire in product; no revocation-enforcement
+coverage is claimed. The `separatePerson` fixture reuses the adder's rendezvous
+key and gives the person no independent identity: it equals the current guest
+device in the ordinary path and the previous guest in competing variants, so it
+is not a complete second-person proof.
+Every-record-kind exchange is an upstream vector/adapter pass,
+not a separate Browser end-to-end run. Browser lane behaviour is **not run**:
+the 48 upstream lane vectors pass, but production MLS/lane wiring is unavailable.
+No live external mailbox, witness, allocation or box service is exercised, and no
+public-network, deployment, physical-device, human or production acceptance is
+claimed. No screen or user interaction changed.
+
+The consumer vulnerabilities in §13 block PR/merge despite the local functional
+results. Claude and Codex confirm all earlier findings resolved with no new
+findings in `reviews/kithmoot-d358f0e8-claude.md` and
+`reviews/kithmoot-d358f0e8-codex.md`; they are AI reviews only.

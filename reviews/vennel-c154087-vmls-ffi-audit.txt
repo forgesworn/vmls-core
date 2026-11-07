@@ -1,0 +1,143 @@
+    Fetching advisory database from `https://github.com/RustSec/advisory-db.git`
+      Loaded 1422 security advisories (from ~/.cargo/advisory-db)
+    Updating crates.io index
+    Scanning vmls-ffi/Cargo.lock for vulnerabilities (253 crate dependencies)
+Crate:     crypto-bigint
+Version:   0.5.5
+Title:     Multiple timing variability issues in operations intended to be constant-time
+Date:      2026-10-23
+ID:        RUSTSEC-2026-0387
+URL:       https://github.com/RustCrypto/crypto-bigint/pull/1365
+Solution:  Upgrade to >=0.7.6
+Dependency tree:
+crypto-bigint 0.5.5
+└── elliptic-curve 0.13.8
+    ├── primeorder 0.13.6
+    │   ├── p384 0.13.1
+    │   │   ├── openmls_rust_crypto 0.6.0
+    │   │   │   └── vmls-mls 0.1.0
+    │   │   │       └── vmls-ffi 0.1.0
+    │   │   ├── openmls_basic_credential 0.6.0
+    │   │   │   └── vmls-mls 0.1.0
+    │   │   └── hpke-rs-rust-crypto 0.7.0
+    │   │       ├── openmls_rust_crypto 0.6.0
+    │   │       └── hpke-rs 0.7.0
+    │   │           └── openmls_rust_crypto 0.6.0
+    │   └── p256 0.13.2
+    │       ├── openmls_rust_crypto 0.6.0
+    │       ├── openmls_basic_credential 0.6.0
+    │       └── hpke-rs-rust-crypto 0.7.0
+    ├── p384 0.13.1
+    ├── p256 0.13.2
+    ├── k256 0.13.4
+    │   ├── vmls-ffi 0.1.0
+    │   └── hpke-rs-rust-crypto 0.7.0
+    └── ecdsa 0.16.9
+        ├── p384 0.13.1
+        ├── p256 0.13.2
+        └── k256 0.13.4
+
+Crate:     libcrux-kem
+Version:   0.0.9
+Title:     Panic on Decoding Short Hybrid Keys
+Date:      2026-08-24
+ID:        RUSTSEC-2026-0331
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0331
+Severity:  8.7 (high)
+Solution:  Upgrade to >=0.0.10
+Dependency tree:
+libcrux-kem 0.0.9
+└── hpke-rs-libcrux 0.7.0
+    └── hpke-rs 0.7.0
+        └── openmls_rust_crypto 0.6.0
+            └── vmls-mls 0.1.0
+                └── vmls-ffi 0.1.0
+
+Crate:     libcrux-kem
+Version:   0.0.9
+Title:     Hybrid Encapsulation from Seed Panics on Short Seed
+Date:      2026-09-28
+ID:        RUSTSEC-2026-0330
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0330
+Severity:  5.6 (medium)
+Solution:  Upgrade to >=0.0.10
+
+Crate:     basic-toml
+Version:   0.1.10
+Warning:   unmaintained
+Title:     `basic-toml` is unmaintained
+Date:      2026-09-26
+ID:        RUSTSEC-2026-0374
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0374
+Dependency tree:
+basic-toml 0.1.10
+└── askama_derive 0.13.1
+    └── askama 0.13.1
+        └── uniffi_bindgen 0.29.5
+            └── uniffi 0.29.5
+                └── vmls-ffi 0.1.0
+
+Crate:     proc-macro-error2
+Version:   2.0.1
+Warning:   unmaintained
+Title:     proc-macro-error2 is unmaintained
+Date:      2026-06-07
+ID:        RUSTSEC-2026-0173
+URL:       https://rustsec.org/advisories/RUSTSEC-2026-0173
+Dependency tree:
+proc-macro-error2 2.0.1
+└── hax-lib-macros 0.3.7
+    └── hax-lib 0.3.7
+        ├── libcrux-sha3 0.0.10
+        │   ├── libcrux-ml-kem 0.0.10
+        │   │   └── libcrux-kem 0.0.9
+        │   │       └── hpke-rs-libcrux 0.7.0
+        │   │           └── hpke-rs 0.7.0
+        │   │               └── openmls_rust_crypto 0.6.0
+        │   │                   └── vmls-mls 0.1.0
+        │   │                       └── vmls-ffi 0.1.0
+        │   ├── libcrux-kem 0.0.9
+        │   └── hpke-rs 0.7.0
+        ├── libcrux-secrets 0.0.6
+        │   ├── libcrux-traits 0.0.8
+        │   │   ├── libcrux-sha3 0.0.10
+        │   │   ├── libcrux-sha2 0.0.8
+        │   │   │   ├── libcrux-p256 0.0.8
+        │   │   │   │   ├── libcrux-kem 0.0.9
+        │   │   │   │   └── libcrux-ecdh 0.0.8
+        │   │   │   │       ├── libcrux-kem 0.0.9
+        │   │   │   │       └── hpke-rs-libcrux 0.7.0
+        │   │   │   └── libcrux-hmac 0.0.8
+        │   │   │       └── libcrux-hkdf 0.0.8
+        │   │   │           └── hpke-rs-libcrux 0.7.0
+        │   │   ├── libcrux-p256 0.0.8
+        │   │   ├── libcrux-ml-kem 0.0.10
+        │   │   ├── libcrux-kem 0.0.9
+        │   │   ├── libcrux-hmac 0.0.8
+        │   │   ├── libcrux-curve25519 0.0.8
+        │   │   │   ├── libcrux-kem 0.0.9
+        │   │   │   └── libcrux-ecdh 0.0.8
+        │   │   ├── libcrux-chacha20poly1305 0.0.9
+        │   │   │   └── libcrux-aead 0.0.9
+        │   │   │       └── hpke-rs-libcrux 0.7.0
+        │   │   ├── libcrux-aes 0.0.9
+        │   │   │   └── libcrux-aead 0.0.9
+        │   │   ├── libcrux-aead 0.0.9
+        │   │   └── hpke-rs-libcrux 0.7.0
+        │   ├── libcrux-p256 0.0.8
+        │   ├── libcrux-ml-kem 0.0.10
+        │   ├── libcrux-hkdf 0.0.8
+        │   ├── libcrux-curve25519 0.0.8
+        │   ├── libcrux-chacha20poly1305 0.0.9
+        │   ├── libcrux-aes 0.0.9
+        │   └── libcrux-aead 0.0.9
+        ├── libcrux-ml-kem 0.0.10
+        ├── libcrux-intrinsics 0.0.8
+        │   ├── libcrux-sha3 0.0.10
+        │   ├── libcrux-ml-kem 0.0.10
+        │   └── libcrux-aes 0.0.9
+        └── core-models 0.0.7
+            └── libcrux-intrinsics 0.0.8
+
+error: 3 vulnerabilities found!
+warning: 2 allowed warnings found
