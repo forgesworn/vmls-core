@@ -885,3 +885,18 @@ Closure requires migrating every affected consumer to a fixed crypto-bigint line
 and passing the full unignored audit; production acceptance remains a separate
 owner/security gate. Upstream Box `main` advanced during this work and must be
 integrated and retested before a PR.
+
+The implementation candidate updates the VMLS pin to canonical 0.1.2 revision
+`d9a8d24673ad3da7117b1510a2e786767c2bc250`, with no Box Rust-source changes.
+Canonical API inspection found no affected Box call sites. Its 427-package lock
+has SHA-256 `27d4a79f78236df11e3dca15896704f47661bbc2447593bec4fbcc3e58f35249`.
+VMLS now brings k256 0.14.0 and crypto-bigint 0.7.10; the vulnerable 0.5.5 path
+is retained only by Link/Bothy's older k256/p256 0.13 line. The candidate's full
+unignored audit still reports only `RUSTSEC-2026-0387`, with the same five
+warnings; raw output is `reviews/box-d9a8d24-candidate-audit.txt`. Against that
+exact candidate, 97 core VMLS tests, 21 link VMLS tests and all nine explicit
+two-daemon cases pass, including the previously intermittent witness-down case.
+Formatting and diff checks pass. The dependency remediation is rebased onto Box
+`main` `7510db5`; this is scoped evidence, not full workspace CI. The changed
+lock is outside the exact exception above and requires a fresh owner disposition
+before independent review or a PR.
