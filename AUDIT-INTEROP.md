@@ -257,7 +257,7 @@ turn a compile or unit-test pass into an end-to-end pass.
 |---|---|---|---|---|
 | Rust reference | baseline pass; rerun on candidate | not applicable | baseline hostile suite | local/CI logs |
 | Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
-| Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | KithMoot `d358f0e8`; §§13–14; PR blocked by consumer findings |
+| Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | KithMoot `34f0b3b4`; Vennel `db669f9`; §§13–14; non-shipping exception approved; PR CI pending |
 | Android | pending | pending | pending | reviewer to supply |
 | Box service | pending | pending | pending | reviewer to supply |
 | Firmware/allocation service | pending | pending | pending | reviewer to supply |
@@ -638,16 +638,16 @@ Heartwood. Witness and allocation forwarding have host-fixture coverage, not a
 live external service or deployment test. Detailed evidence is in Heartwood's
 `docs/2026-10-11-allocation-strict-history.md` and the PR 272 CI logs.
 
-Next action: obtain owner disposition or compatible remediation for the Browser
-consumer vulnerabilities before PR/merge. Physical-device acceptance, the
-remaining downstream implementations, and all other separate assurance gates
-remain open.
+Next action: complete fresh Browser delivery reviews and hosted PR CI under the
+approved non-shipping exception (§13), then make separate merge decisions.
+Physical-device acceptance, the remaining downstream implementations, and all
+other separate assurance gates remain open.
 
-## 13. Browser upstream candidate and dependency gate
+## 13. Browser upstream candidate and dependency disposition
 
-Status: **code/review findings resolved locally; PR blocked by consumer vulnerabilities**
+Status: **code/review findings resolved locally; owner-approved non-shipping exception recorded; fresh delivery review and PR CI pending**
 
-The Browser engine candidate is Vennel `c154087ecfc43ee9404fa4d548cdc94c0789afef`,
+The Browser engine source is Vennel `c154087ecfc43ee9404fa4d548cdc94c0789afef`,
 including `9ceaf3317ed2fd28f0abb4073dfd4e4e6258c6ab`. It synchronises the shared
 codec/vector revision `1c0adec` while retaining Vennel-only invitation/admin
 modules and record variants. All 11 shared input files regenerate byte-identically;
@@ -665,23 +665,36 @@ core lock. Every consumer lock reports `RUSTSEC-2026-0387` through the retained
 OpenMLS `crypto-bigint` 0.5.5 line and `RUSTSEC-2026-0330`/`RUSTSEC-2026-0331`
 through `libcrux-kem` 0.0.9. Each consumer lock gains 12 packages for the new
 `k256` 0.14 line, but the direct 0.7.6 minimum does not remediate the older
-OpenMLS line. The vulnerabilities are outside the existing `RUSTSEC-2026-0173`
-maintenance-warning exception and **block PR/merge pending owner disposition or
-compatible remediation**. Raw outputs are `reviews/vennel-c154087-vmls-core-audit.txt`,
+OpenMLS line. Raw outputs are `reviews/vennel-c154087-vmls-core-audit.txt`,
 `reviews/vennel-c154087-vmls-mls-audit.txt`,
 `reviews/vennel-c154087-vmls-ffi-audit.txt` and
 `reviews/vennel-c154087-vmls-wasm-audit.txt`; all shared input hashes are in
-`reviews/vennel-c154087-vector-hashes.txt`. Vennel's implementation contract,
-dependency exception and regenerated SBOM record the exact graph and limits.
+`reviews/vennel-c154087-vector-hashes.txt`.
+
+On 7 November 2026 the owner explicitly approved a non-shipping exception for
+exactly those three advisories at the unchanged consumer lock hashes. Vennel
+`db669f9ebc94b7f6367df2bccf7a544a531d8717` records the exact scope, exposure
+analysis, remediation investigation, successful audits with only those IDs
+ignored, and closure conditions in its implementation contract, dependency
+exception and `docs/gate/evidence/2026-11-07-vmls-consumer-cargo-audit.txt`.
+That commit changes documentation and CI only; the reviewed engine source and
+all lockfiles remain those at `c154087`. It enables PR and post-merge Vennel CI.
+No stable compatible provider remediation is currently released, and no
+unreleased pin, provider fork or backport is authorised. The exception permits
+PR review and hosted CI; merge, deployment, production use and shipping remain
+separate gates. Any new advisory or changed lock, feature, target or flag
+requires a new disposition.
 
 ## 14. KithMoot Browser scoped interoperability
 
-Status: **scoped local interoperability pass; complete acceptance and PR/merge not run**
+Status: **scoped local interoperability pass; non-shipping exception approved; fresh delivery review and PR CI pending; complete acceptance not run**
 
-KithMoot commit `d358f0e873dfc2f35f0785c2718d0af7bb218645` (including
-`397f3f9308f8b9432220ec700c52c8696d46a76c`, `c0e4c662` and `2be3a38`) pins the Vennel
-`c154087` browser engine and standalone `1c0adec` binding fixture. The manifest,
-loader and generated assets agree. The detailed run record is KithMoot's
+KithMoot delivery commit `34f0b3b4bf2b0c2304eb4ae6bb44ded30330d359` records
+the dependency disposition. It adds documentation only to implementation commit
+`d358f0e873dfc2f35f0785c2718d0af7bb218645` (including `397f3f9308f8b9432220ec700c52c8696d46a76c`,
+`c0e4c662` and `2be3a38`). The Vennel `c154087` browser engine, standalone
+`1c0adec` binding fixture, manifest, loader and generated assets remain
+unchanged and agree. The detailed run record is KithMoot's
 `docs/2026-11-07-browser-vmls-interop.md`.
 
 Local KithMoot checks pass: 44 TypeScript binding tests; 8,942 unit tests with
@@ -709,7 +722,9 @@ No live external mailbox, witness, allocation or box service is exercised, and n
 public-network, deployment, physical-device, human or production acceptance is
 claimed. No screen or user interaction changed.
 
-The consumer vulnerabilities in §13 block PR/merge despite the local functional
-results. Claude and Codex confirm all earlier findings resolved with no new
-findings in `reviews/kithmoot-d358f0e8-claude.md` and
-`reviews/kithmoot-d358f0e8-codex.md`; they are AI reviews only.
+The exception in §13 permits PR review and hosted CI despite the retained
+consumer vulnerabilities; it grants no merge, deployment or production approval.
+Claude and Codex confirm all earlier implementation findings resolved with no
+new findings in `reviews/kithmoot-d358f0e8-claude.md` and
+`reviews/kithmoot-d358f0e8-codex.md`; they are AI reviews only. Fresh reviews of
+the exact delivery commits and hosted PR results are pending.
