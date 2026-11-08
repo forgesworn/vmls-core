@@ -815,7 +815,7 @@ occurred. Next: Box service.
 
 ## 16. Box service baseline and dependency-audit gate
 
-Status: **PR #161 open; hosted CI and Android passed; merge decision pending**
+Status: **merged; post-merge CI and Android passed; non-shipping exception remains**
 
 The clean Bothy worktree is `bothy-node-vmls-interop-20261107` at
 `81b67c2ef1632862c58c2ce4c3f3ba2fa0337f3e`, on branch
@@ -883,8 +883,8 @@ production-MLS approval. Any changed lock, dependency, feature, target or flag,
 or newly demonstrated reachable affected operation, requires a new disposition.
 Closure requires migrating every affected consumer to a fixed crypto-bigint line
 and passing the full unignored audit; production acceptance remains a separate
-owner/security gate. Upstream Box `main` advanced during this work and must be
-integrated and retested before a PR.
+owner/security gate. Upstream Box `main` advanced during this work; the candidate
+was rebased and retested before the PR.
 
 The implementation candidate updates the VMLS pin to canonical 0.1.2 revision
 `d9a8d24673ad3da7117b1510a2e786767c2bc250`, with no Box Rust-source changes.
@@ -938,12 +938,24 @@ scoped VMLS cases pass. The full workspace gate remains red. The owner explicitl
 approved opening a PR with this limitation. The pre-push hook failed on the same
 event-relay assertion, so the branch was pushed with `--no-verify`; this bypass is
 disclosed in the PR and is not a passed-check claim. [PR #161]
-(https://github.com/forgesworn/bothy-node/pull/161) is open at `8cbb58a` with the
-failures, scoped evidence, exception and deployment limits in its body. Hosted
-CI run 42397634349 and Android run 42397637394 were manually dispatched at that
-exact commit and both completed successfully. Android passed both jobs,
+(https://github.com/forgesworn/bothy-node/pull/161) was opened at `8cbb58a` with
+the failures, scoped evidence, exception and deployment limits in its body.
+Hosted CI run 42397634349 and Android run 42397637394 were manually dispatched at
+that exact commit and both completed successfully. Android passed both jobs,
 including the G3 size gate and debug assembly/unit tests. Hosted CI passed every
 enabled job, including `cargo test --workspace --locked`; its disabled deploy-image
 job was skipped by configuration. These hosted Linux successes do not erase the
-local macOS failures or establish their root cause. PR #161 remains open pending
-the owner's separate merge decision; no deployment or production approval exists.
+local macOS failures or establish their root cause.
+
+Following the owner's explicit merge authorisation, PR #161 merged on 7 November
+2026 as `5970bc844563bdc6829efb4acafafb63a07d38ca`. The task branch is an ancestor
+of remote `main`, whose merged `Cargo.lock` retains the approved 427-package
+SHA-256 `27d4a79f78236df11e3dca15896704f47661bbc2447593bec4fbcc3e58f35249`.
+Post-merge CI run 42427590426 and Android run 42427592851 were manually dispatched
+at that merge commit and both completed successfully. CI passed every enabled job,
+including `cargo test --workspace --locked`; deploy-image remained disabled by
+configuration. Android passed arm64 cross-compilation, the G3 size gate, debug
+assembly and unit tests. These post-merge successes do not erase the local macOS
+failures or establish their root cause. No deployment, shipping, production use
+or production MLS enablement has occurred or is approved. Next: firmware and
+allocation-service interoperability.
