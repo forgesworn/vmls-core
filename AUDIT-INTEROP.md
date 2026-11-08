@@ -259,8 +259,8 @@ turn a compile or unit-test pass into an end-to-end pass.
 | Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
 | Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | merged: Vennel `feea45f`, KithMoot `3d5acf7`; PR and post-merge CI passed; §§13–14 |
 | Android | pass (local, scoped): 684 protocol and 3,386 app tests plus one skip; 23 emulator tests | pass (local): 38 framed Kotlin reader cases; other exchanges are host/FFI fixtures | pass (local, scoped): session/commit-slot/vault/restart fixtures; live-box join lab and production revocation not covered | merged `6deaaca`; PR and post-merge CI passed; §15 |
-| Box service | pending | pending | pending | reviewer to supply |
-| Firmware/allocation service | pending | pending | pending | reviewer to supply |
+| Box service | pass (local, scoped): 97 core, 21 Link and 9 two-daemon VMLS cases; hosted workspace tests | pass (local): real verified Link courier and two-daemon fixtures; no public network | pass (local, scoped): witness/allocation refusal, conflict, retirement and token replay; local macOS event-batching failures disclosed | merged `5970bc8`; PR/post-merge CI and Android passed; §16 |
+| Firmware/allocation service | pass (scoped): Heartwood allocation/witness/fresh-R and Box allocation-courier suites | pass (fixtures/loopback): Python journal and independently enrolled writer over verified Link; no live Heartwood↔Box exchange | pass (scoped): writer/method/replay/transition faults; not run: allocation-service uncertain store result | Heartwood `472ae52`; Box `5970bc8`; §§12, 16–17 |
 
 Heartwood's pass cells are not end-to-end acceptance. Scenarios 1–5, 8 and 9
 remain **not run** there; scenarios 6 and 7 have host-fixture coverage only.
@@ -957,5 +957,41 @@ including `cargo test --workspace --locked`; deploy-image remained disabled by
 configuration. Android passed arm64 cross-compilation, the G3 size gate, debug
 assembly and unit tests. These post-merge successes do not erase the local macOS
 failures or establish their root cause. No deployment, shipping, production use
-or production MLS enablement has occurred or is approved. Next: firmware and
-allocation-service interoperability.
+or production MLS enablement has occurred or is approved.
+
+## 17. Firmware and allocation-service reconciliation
+
+Status: **scoped host/fixture interoperability pass; live-service and physical acceptance not run**
+
+No new implementation or dependency change is required for this row. Heartwood
+PR 272 merged as `472ae52ba9342dfde61bb8a20347b1aad22d8d9e`, with follow-up
+documentation PR 273 merged as `c0242f1b692043d1b9b5797f06fe2509bac112af`.
+Box PR 161 merged as `5970bc844563bdc6829efb4acafafb63a07d38ca`. Their scoped
+verification and post-merge results are in §§12 and 16.
+
+Heartwood pins VMLS `1c0adece2ec71ccfca0d98cafc7e3ddb0ebf33a2`; Box pins the
+later canonical merge `d9a8d24673ad3da7117b1510a2e786767c2bc250`. Exact diffs
+of `vmls-core/` and `vectors/` between those revisions are empty: the intervening
+commits change only this audit and its review records. The different revision
+labels therefore do not indicate codec or vector drift, and no Heartwood lock
+change or new dependency exception was introduced.
+
+The allocation-service evidence executes Box's strict forwarded-request codec,
+peer-bound one-use tokens and actual verified Link transport. Tests cover an
+independently enrolled writer, read/advance, wrong method, invalid signature,
+wrong writer, conflict, retirement, concurrent double-submit, token replay,
+expiry, restart and missing-peer refusal. Token consumption is atomic before a
+store operation. These are local fixtures and loopback transport, not a public
+or deployed service.
+
+An uncertain allocation-store result after token consumption remains **not
+run** in Box. Heartwood's writer-side commit/promotion uncertainty tests do not
+substitute for that service result. No live Heartwood-to-Box allocation exchange,
+physical-device operation, production enrolment, deployment or fresh allocation
+authority is claimed. Heartwood's separate physical and image-budget limits in
+§12 remain unchanged.
+
+All implementation rows now have scoped evidence; this does not complete every
+end-to-end scenario or the release gates in §§5–7. The next decision is owner
+review of the scoped pack and, if wanted, separately authorised live-service,
+uncertain-store and physical-device acceptance. Production MLS remains disabled.
