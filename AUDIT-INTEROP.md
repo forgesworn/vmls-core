@@ -259,8 +259,8 @@ turn a compile or unit-test pass into an end-to-end pass.
 | Heartwood | pass: scoped allocation/witness/fresh-R host suites | pass: Python journal and 36 Introduction fixture exchanges | pass: scoped allocation/witness host cases; other scenarios not run | Heartwood `ad83fca`; PR #272 CI 42278785850; §12 |
 | Browser | pass (local, scoped): binding/vector suites, 1,869 browser tests and 8,942 unit tests | pass (local): TypeScript/Rust binding fixture; other exchanges are host/browser fixtures | pass (local, scoped): scenarios 1–8 with stated limits; scenario 3 Browser exchange and scenario 9 not run | merged: Vennel `feea45f`, KithMoot `3d5acf7`; PR and post-merge CI passed; §§13–14 |
 | Android | pass (local, scoped): 684 protocol and 3,386 app tests plus one skip; 23 emulator tests | pass (local): 38 framed Kotlin reader cases; other exchanges are host/FFI fixtures | pass (local, scoped): session/commit-slot/vault/restart fixtures; live-box join lab and production revocation not covered | merged `6deaaca`; PR and post-merge CI passed; §15 |
-| Box service | pass (local, scoped): 97 core, 21 Link and 9 two-daemon VMLS cases; hosted workspace tests | pass (local): real verified Link courier and two-daemon fixtures; no public network | pass (local, scoped): witness/allocation refusal, conflict, retirement and token replay; local macOS event-batching failures disclosed | merged `5970bc8`; PR/post-merge CI and Android passed; §16 |
-| Firmware/allocation service | pass (scoped): Heartwood allocation/witness/fresh-R and Box allocation-courier suites | pass (fixtures/loopback): Python journal and independently enrolled writer over verified Link; no live Heartwood↔Box exchange | pass (scoped): writer/method/replay/transition faults; not run: allocation-service uncertain store result | Heartwood `472ae52`; Box `5970bc8`; §§12, 16–17 |
+| Box service | pass (local and hosted): full workspace gate plus scoped VMLS cases | pass (local): real verified Link courier and two-daemon fixtures; no public network | pass (local and hosted): witness/allocation refusal, conflict, retirement, token replay and uncertain store result; relay batching test made deterministic | merged `5970bc8`, `f572fa9`; PR and post-merge CI/Android passed; §§16–17 |
+| Firmware/allocation service | pass (scoped): Heartwood allocation/witness/fresh-R and Box allocation-courier suites | pass (fixtures/loopback): Python journal and independently enrolled writer over verified Link; no live Heartwood↔Box exchange | pass (scoped): writer/method/replay/transition faults and allocation-service uncertain store result | Heartwood `472ae52`; Box `f572fa9`; PR and post-merge CI/Android passed; §§12, 16–17 |
 
 Heartwood's pass cells are not end-to-end acceptance. Scenarios 1–5, 8 and 9
 remain **not run** there; scenarios 6 and 7 have host-fixture coverage only.
@@ -930,6 +930,18 @@ command. These timing/concurrency failures are not hidden or relabelled, and no
 unrelated source fix was attempted. Their root cause and an unmodified-baseline
 reproduction remain unestablished.
 
+Follow-up commit `b7f73ed0ce8c5fb6b28a59ed567f3b1c506d41a2` addresses the
+event-relay assertion without changing production code. It failed twice more in
+the full library suite (87 and 69 batches) while passing alone. The writer's
+intentional no-debounce design makes that aggregate batch-count threshold depend
+on producer scheduling, not on correct delivery or the existence of group commit.
+The revised test holds the first commit until the connection has 64 writes in
+flight, guaranteeing a largest batch of at least 32, and removes the aggregate
+threshold. A release-on-drop guard makes timeout teardown safe. The complete
+`scripts/check` gate then passed at `b7f73ed`, including workspace tests,
+documentation, deploy checks and Android unit tests. This is test determinism
+evidence, not a new batching-performance benchmark.
+
 The separately run `cargo doc --no-deps` succeeds with existing rustdoc warnings.
 The deploy script passes its cadence isolation check; `systemd-analyze` is
 unavailable on this host, and no container image was supplied, so those two
@@ -961,7 +973,7 @@ or production MLS enablement has occurred or is approved.
 
 ## 17. Firmware and allocation-service reconciliation
 
-Status: **merged scoped pass; local uncertain-store regression reviewed and awaiting PR decision**
+Status: **merged with uncertain-store coverage; PR and post-merge checks passed**
 
 No new implementation or dependency change is required for this row. Heartwood
 PR 272 merged as `472ae52ba9342dfde61bb8a20347b1aad22d8d9e`, with follow-up
@@ -984,22 +996,48 @@ expiry, restart and missing-peer refusal. Token consumption is atomic before a
 store operation. These are local fixtures and loopback transport, not a public
 or deployed service.
 
-An uncertain allocation-store result after token consumption remains **not
-run** in merged Box `main`. Local, unmerged commit
-`2dbdf48f6cdc4181468726614da5b30da9897c3b`, based on `5970bc8`, adds that
-regression on `test/allocation-store-uncertainty-20261108`. A private forwarding
-helper permits test fault injection without new dependencies or production API
-surface. The test performs a real store commit, injects an error producing an
-empty `503`, proves the spent envelope cannot replay, then uses a fresh token
-and signature to reconcile the same committed revision without another advance.
-The focused test, all 24 witness/allocation tests and all 21 VMLS Link tests
-pass; formatting and `bothy-link` clippy with warnings denied also pass.
+An uncertain allocation-store result after token consumption now has merged
+regression coverage. [PR #164](https://github.com/forgesworn/bothy-node/pull/164)
+merged as `f572fa941cbd459b91a83add649f3b5265986487`, with candidate head
+`b7f73ed0ce8c5fb6b28a59ed567f3b1c506d41a2` based on `5970bc8`. Allocation commit
+`2dbdf48f6cdc4181468726614da5b30da9897c3b` adds the regression on
+`test/allocation-store-uncertainty-20261108`. A private forwarding helper permits
+test fault injection without new dependencies or production API surface. The
+test performs a real store commit, injects an error producing an empty `503`,
+proves the spent envelope cannot replay, then uses a fresh token and signature
+to reconcile the same committed revision without another advance. The focused
+test, all 24 witness/allocation tests and all 21 VMLS Link tests pass.
 
-Claude and Codex independently returned **OPEN PR** with no blocking findings:
-`reviews/box-2dbdf48-claude.md` and `reviews/box-2dbdf48-codex.md`. Claude's two
-optional additional assertions are recorded but were not required for approval.
-The commit is local and has no PR or hosted run, so the merged matrix result is
-unchanged. The next delivery decision is whether to open a Box PR.
+Candidate `b7f73ed` also makes the pre-existing relay batching test deterministic
+as described in §16. The full standard `scripts/check` gate passes on that exact
+commit, including the workspace's locked tests and Android unit tests. No
+manifest or lockfile changed; the approved 427-package lock SHA-256 remains
+`27d4a79f78236df11e3dca15896704f47661bbc2447593bec4fbcc3e58f35249`.
+
+Claude and Codex independently returned **OPEN PR** for the allocation regression
+and again for the final relay-test revision, with no blocking findings:
+`reviews/box-2dbdf48-claude.md`, `reviews/box-2dbdf48-codex.md`,
+`reviews/box-b7f73ed-claude.md` and `reviews/box-b7f73ed-codex.md`. Claude's two
+optional allocation assertions remain unrequired. The first relay-test draft was
+rejected for a possible impossible wait and teardown hang; the final cap-based
+condition and release guard resolved that finding before approval.
+
+Two pushes completed the full gate but exited 141 during the subsequent Git
+LFS/push stage after GitHub closed the idle connection. The LFS stage succeeds
+immediately when run alone. A third push used SSH keepalives with the same full
+pre-push hook and succeeded; no hook was bypassed and no persistent transport
+configuration changed.
+
+PR-head CI run 42448791333 passed every enabled job, including
+`cargo test --workspace --locked`; deploy-image remained disabled by
+configuration. PR-head Android run 42448793374 passed arm64 cross-compilation,
+the G3 size gate, debug assembly and unit tests. Following the owner's explicit
+merge authorisation, PR #164 merged on 8 November 2026 as `f572fa9`. Post-merge
+CI run 42449609801 and Android run 42449611893 were manually dispatched at that
+exact merge commit and both passed. CI passed every enabled job, including
+`cargo test --workspace --locked`; deploy-image remained disabled by
+configuration. Android passed arm64 cross-compilation, the G3 size gate, debug
+assembly and unit tests.
 
 No live Heartwood-to-Box allocation exchange, physical-device operation,
 production enrolment, deployment or fresh allocation authority is claimed.
