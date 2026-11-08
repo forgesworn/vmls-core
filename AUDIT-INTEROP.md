@@ -961,7 +961,7 @@ or production MLS enablement has occurred or is approved.
 
 ## 17. Firmware and allocation-service reconciliation
 
-Status: **scoped host/fixture interoperability pass; live-service and physical acceptance not run**
+Status: **merged scoped pass; local uncertain-store regression reviewed and awaiting PR decision**
 
 No new implementation or dependency change is required for this row. Heartwood
 PR 272 merged as `472ae52ba9342dfde61bb8a20347b1aad22d8d9e`, with follow-up
@@ -985,13 +985,25 @@ store operation. These are local fixtures and loopback transport, not a public
 or deployed service.
 
 An uncertain allocation-store result after token consumption remains **not
-run** in Box. Heartwood's writer-side commit/promotion uncertainty tests do not
-substitute for that service result. No live Heartwood-to-Box allocation exchange,
-physical-device operation, production enrolment, deployment or fresh allocation
-authority is claimed. Heartwood's separate physical and image-budget limits in
-§12 remain unchanged.
+run** in merged Box `main`. Local, unmerged commit
+`2dbdf48f6cdc4181468726614da5b30da9897c3b`, based on `5970bc8`, adds that
+regression on `test/allocation-store-uncertainty-20261108`. A private forwarding
+helper permits test fault injection without new dependencies or production API
+surface. The test performs a real store commit, injects an error producing an
+empty `503`, proves the spent envelope cannot replay, then uses a fresh token
+and signature to reconcile the same committed revision without another advance.
+The focused test, all 24 witness/allocation tests and all 21 VMLS Link tests
+pass; formatting and `bothy-link` clippy with warnings denied also pass.
 
-All implementation rows now have scoped evidence; this does not complete every
-end-to-end scenario or the release gates in §§5–7. The next decision is owner
-review of the scoped pack and, if wanted, separately authorised live-service,
-uncertain-store and physical-device acceptance. Production MLS remains disabled.
+Claude and Codex independently returned **OPEN PR** with no blocking findings:
+`reviews/box-2dbdf48-claude.md` and `reviews/box-2dbdf48-codex.md`. Claude's two
+optional additional assertions are recorded but were not required for approval.
+The commit is local and has no PR or hosted run, so the merged matrix result is
+unchanged. The next delivery decision is whether to open a Box PR.
+
+No live Heartwood-to-Box allocation exchange, physical-device operation,
+production enrolment, deployment or fresh allocation authority is claimed.
+Heartwood's separate physical and image-budget limits in §12 remain unchanged.
+All implementation rows have scoped evidence, but this does not complete every
+end-to-end scenario or the release gates in §§5–7. Live-service and physical
+acceptance require separate authorisation. Production MLS remains disabled.
